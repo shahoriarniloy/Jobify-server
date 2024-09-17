@@ -53,7 +53,7 @@ run().catch(console.dir);
 
   
 app.get('/',(req,res)=>{
-    res.send('Jobify server')
+    res.send('Jobify Server')
 });
 
 
