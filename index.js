@@ -30,6 +30,30 @@ async function run() {
   try {
     // await client.connect();
     const database = client.db("jobifyDB");
+
+    const companiesCollection =database.collection("companies");
+
+    
+    app.get('/companies/top', async (req, res) => {
+      try {
+        const companies = await companiesCollection
+          .find()
+          .sort({ company_size: -1 })
+          .limit(8)
+          .toArray();
+        res.json(companies);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    });
+
+    
+    
+    
+    
+    
+    console.log("You successfully connected to MongoDB!");
+
     const companiesCollection = database.collection("companies");
     const jobsCollection = database.collection("jobs");
 
@@ -59,10 +83,12 @@ async function run() {
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );
+
   } finally {
   }
 }
 run().catch(console.dir);
+
 
 
 app.get("/", (req, res) => {
