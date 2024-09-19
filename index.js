@@ -60,7 +60,7 @@ async function run() {
     
     
     
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
+    console.log("You successfully connected to MongoDB!");
   } finally {
    
   }
@@ -69,7 +69,7 @@ run().catch(console.dir);
 
   
 app.get('/',(req,res)=>{
-    res.send('Jobify server')
+    res.send('Jobify Server')
 });
 
 
