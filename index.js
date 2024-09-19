@@ -39,10 +39,26 @@ async function run() {
   try {
    
     const database = client.db("jobifyDB");
-    
+    const companiesCollection =database.collection("companies");
 
     
- 
+    app.get('/companies/top', async (req, res) => {
+      try {
+        const companies = await companiesCollection
+          .find()
+          .sort({ company_size: -1 })
+          .limit(8)
+          .toArray();
+        res.json(companies);
+      } catch (error) {
+        res.status(500).json({ message: error.message });
+      }
+    });
+
+    
+    
+    
+    
     
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
   } finally {
