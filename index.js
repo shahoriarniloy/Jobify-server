@@ -60,109 +60,118 @@ async function run() {
       }
     });
 
-    app.get("/jobs/search", async (req, res) => {
-      const { searchTerm, location } = req.query;
-      const query = {};
+    const currentDate = new Date();
+
+    app.get("/jobs/advanced-search", async (req, res) => {
+      const page = parseInt(req.query.page) || 0; 
+      const size = parseInt(req.query.size) || 10; 
+      const currentDateString = new Date().toISOString().split('T')[0]; 
+  
+      console.log("Advanced search endpoint hit"); 
+      const { searchTerm, location, experience, jobType, education, jobLevel, salaryRange } = req.query;
+  
+      const query = {
+          deadline: { $gte: currentDateString } 
+      };
   
       if (searchTerm) {
           query.$or = [
-              { title: { $regex: searchTerm, $options: "i" } }, 
-              { company: { $regex: searchTerm, $options: "i" } } 
+              { title: { $regex: searchTerm, $options: "i" } },
+              { company: { $regex: searchTerm, $options: "i" } }
           ];
       }
   
-      if (location) {
-          query.location = { $regex: location, $options: "i" }; 
+      if (location && location.trim()) {
+          query.location = { $regex: location, $options: "i" };
+      }
+  
+      if (experience && experience.length > 0) {
+          query.experience = { $in: experience.split(',') };
+      }
+  
+      if (jobType && jobType.length > 0) {
+          query.jobType = { $in: jobType.split(',') };
+      }
+  
+      if (education && education.length > 0) {
+          query.education = { $in: education.split(',') };
+      }
+  
+      if (jobLevel && jobLevel.length > 0) {
+          query.jobLevel = { $in: jobLevel.split(',') };
+      }
+  
+      console.log('salary range:', salaryRange);
+  
+      if (salaryRange && salaryRange.includes('-')) {
+          const [minSalary, maxSalary] = salaryRange
+              .replace(/\$/g, '') 
+              .split('-')
+              .map(Number);
+  
+          console.log(minSalary, maxSalary);
+  
+          if (!isNaN(minSalary) && !isNaN(maxSalary)) {
+              query.salaryRange = {
+                  $regex: `^\\$(${minSalary}|[${minSalary + 1}-${maxSalary}][0-9]*|[1-9][0-9]{2,})-\\$${maxSalary}$`
+              };
+          } else {
+              console.error('Invalid salary range:', salaryRange);
+          }
       }
   
       try {
-          if (!searchTerm && !location) {
-              return res.json([]); 
-          }
+          console.log("Query:", query); 
+          console.log('Advanced search endpoint hit');
+          console.log('Query:', JSON.stringify(query, null, 2));
   
-          const result = await jobsCollection.find(query).toArray();
-          res.send(result);
+          const totalJobs = await jobsCollection.countDocuments(query);
+      
+          const cursor = jobsCollection.find(query).skip(page * size).limit(size);
+          const result = await cursor.toArray();
+          res.json({ totalJobs, jobs: result });  
+          console.log('Query Result:', result);
+  
       } catch (error) {
           console.error('Error fetching jobs:', error);
           res.status(500).send("Server Error");
       }
   });
-  
 
-  app.get("/jobs/advanced-search", async (req, res) => {
-    const page = parseInt(req.query.page);
-    const size = parseInt(req.query.size);
-    
-    console.log("Advanced search endpoint hit"); 
-    const { searchTerm, location, experience, jobType, education, jobLevel, salaryRange } = req.query;
-    const query = {};
+
+  app.get("/jobs/search", async (req, res) => {
+    const { searchTerm, location } = req.query;
+    const currentDateString = new Date().toISOString().split('T')[0]; 
+
+    const query = {
+        deadline: { $gte: currentDateString } 
+    };
 
     if (searchTerm) {
         query.$or = [
-            { title: { $regex: searchTerm, $options: "i" } },
-            { company: { $regex: searchTerm, $options: "i" } }
+            { title: { $regex: searchTerm, $options: "i" } }, 
+            { company: { $regex: searchTerm, $options: "i" } } 
         ];
     }
 
-    if (location && location.trim()) {
-        query.location = { $regex: location, $options: "i" };
+    if (location) {
+        query.location = { $regex: location, $options: "i" }; 
     }
 
-    if (experience && experience.length > 0) {
-        query.experience = { $in: experience.split(',') };
-    }
-
-    if (jobType && jobType.length > 0) {
-        query.jobType = { $in: jobType.split(',') };
-    }
-
-    if (education && education.length > 0) {
-        query.education = { $in: education.split(',') };
-    }
-
-    if (jobLevel && jobLevel.length > 0) {
-        query.jobLevel = { $in: jobLevel.split(',') };
-    }
-
-    console.log('salary range:', salaryRange);
-
-    if (salaryRange && salaryRange.includes('-')) {
-      const [minSalary, maxSalary] = salaryRange
-          .replace(/\$/g, '') 
-          .split('-')
-          .map(Number);
-
-      console.log(minSalary, maxSalary);
-
-      if (!isNaN(minSalary) && !isNaN(maxSalary)) {
-          query.salaryRange = {
-              $regex: `^\\$(${minSalary}|[${minSalary + 1}-${maxSalary}][0-9]*|[1-9][0-9]{2,})-\\$${maxSalary}$`
-          };
-      } else {
-          console.error('Invalid salary range:', salaryRange);
-      }
-  }
-  
-  
     try {
-      console.log("Query:", query); 
-      console.log('Advanced search endpoint hit');
-console.log('Query:', JSON.stringify(query, null, 2));
+        if (!searchTerm && !location) {
+            return res.json([]); 
+        }
 
-      const totalJobs = await jobsCollection.countDocuments(query);
-    
-          const cursor = jobsCollection.find(query).skip(page * size).limit(size);
-          const result = await cursor.toArray();
-          res.json({ totalJobs, jobs: result });  
-console.log('Query Result:', result);
-
-      // res.send(result);
-  } catch (error) {
-      console.error('Error fetching jobs:', error);
-      res.status(500).send("Server Error");
-  }
-  
+        const result = await jobsCollection.find(query).toArray();
+        res.send(result);
+    } catch (error) {
+        console.error('Error fetching jobs:', error);
+        res.status(500).send("Server Error");
+    }
 });
+
+  
 
 
 app.post('/users',async (req,res)=>{
@@ -273,26 +282,56 @@ app.post('/users',async (req,res)=>{
         res.status(500).json({ message: 'Server Error' });
       }
     });
+
+
+    app.get('/jobs/:id', async (req, res) => {
+      const { id } = req.params;
+      try {
+          const job = await jobsCollection.findOne({ _id: id }); 
+          if (!job) {
+              return res.status(404).send("Job not found");
+          }
+          res.json(job);
+      } catch (error) {
+          console.error('Error fetching job by ID:', error);
+          res.status(500).send("Server Error");
+      }
+    });
+    
+
+    
     
     
 
     
     app.get("/jobs", async (req, res) => {
       try {
-        const page = parseInt(req.query.page) ;
-        const size = parseInt(req.query.size) ;
-    
-        const totalJobs = await jobsCollection.countDocuments();
-    
-        const cursor = jobsCollection.find().skip(page * size).limit(size);
-        const result = await cursor.toArray();
-    
-        res.json({ totalJobs, jobs: result });
+          const page = parseInt(req.query.page) || 0; 
+          const size = parseInt(req.query.size) || 10; 
+          const currentDate = new Date(); 
+  
+          console.log("Current Date:", currentDate); 
+  
+          const currentDateString = currentDate.toISOString().split('T')[0]; 
+          const query = { deadline: { $gte: currentDateString } };
+  
+          const totalJobs = await jobsCollection.countDocuments(query); 
+  
+          console.log("Total Jobs Found:", totalJobs); 
+  
+          const cursor = jobsCollection.find(query).skip(page * size).limit(size); 
+          const result = await cursor.toArray();
+  
+          console.log("Jobs Result:", result); 
+  
+          res.json({ totalJobs, jobs: result });
       } catch (error) {
-        console.error('Error fetching jobs:', error);
-        res.status(500).send("Server Error");
+          console.error('Error fetching jobs:', error);
+          res.status(500).send("Server Error");
       }
-    });
+  });
+  
+  
     
 
     app.post('/reviews', async (req, res) => {
