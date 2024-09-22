@@ -41,6 +41,8 @@ async function run() {
     const jobsCollection = database.collection("jobs");
     const reviewsCollection = database.collection("reviews");
     const userCollection = database.collection("users");
+    const bookmarksCollection = database.collection("bookmarks");
+
     
 
 
@@ -198,6 +200,29 @@ app.post('/users',async (req,res)=>{
     }
   });
 
+  app.get("/jobs/company/:companyId", async (req, res) => {
+    const { companyId } = req.params;
+    console.log('company id:',companyId);
+    
+    try {
+      const jobs = await jobsCollection.find({ company_id: companyId }).toArray();
+      console.log(jobs);
+      
+      if (!jobs.length) {
+        return res.status(404).send("No jobs found for this company");
+      }
+
+      
+      res.json(jobs);
+    } catch (error) {
+      console.error('Error fetching jobs by company ID:', error);
+      res.status(500).send("Server Error");
+    }
+  });
+
+
+  
+
     app.get("/companies/:id", async (req, res) => {
       const { id } = req.params;
       try {
@@ -214,6 +239,44 @@ app.post('/users',async (req,res)=>{
       }
     });
 
+
+    app.post('/bookmarks', async (req, res) => {
+      const { userEmail, jobId } = req.body;
+    
+      if (!userEmail || !jobId) {
+        return res.status(400).json({ message: 'User ID and Job ID are required' });
+      }
+    
+      try {
+        const existingBookmark = await bookmarksCollection.findOne({ userEmail, jobId });
+    
+        if (existingBookmark) {
+          return res.status(400).json({ message: 'Job already bookmarked' });
+        }
+            const bookmark = { userEmail, jobId };
+        const result = await bookmarksCollection.insertOne(bookmark);
+        res.status(201).json({ message: 'Job bookmarked', id: result.insertedId });
+      } catch (error) {
+        console.error('Error adding bookmark:', error);
+        res.status(500).json({ message: 'Server Error' });
+      }
+    });
+
+    app.get('/bookmarks/:userEmail', async (req, res) => {
+      const { userEmail } = req.params;
+      
+      try {
+        const bookmarks = await bookmarksCollection.find({ userEmail }).toArray();
+        res.json(bookmarks);
+      } catch (error) {
+        console.error('Error fetching bookmarks:', error);
+        res.status(500).json({ message: 'Server Error' });
+      }
+    });
+    
+    
+
+    
     app.get("/jobs", async (req, res) => {
       try {
         const page = parseInt(req.query.page) ;
