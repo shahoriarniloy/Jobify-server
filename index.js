@@ -29,11 +29,22 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // await client.connect();
-    const database = client.db("jobifyDB");
 
+    // database and collection
+    const database = client.db("jobifyDB");
     const companiesCollection = database.collection("companies");
     const jobsCollection = database.collection("jobs");
 
+
+    // company related API
+
+    // get all companies
+    app.get("/companies", async (req, res) => {
+      const result = await companiesCollection.find().toArray();
+      res.send(result);
+    });
+
+    // Get top Companies
     app.get("/companies/top", async (req, res) => {
       try {
         const companies = await companiesCollection
@@ -66,7 +77,8 @@ async function run() {
       }
     });
 
-    // get jobs
+    // Job Related API
+    // get all jobs
     app.get("/jobs", async (req, res) => {
       const result = await jobsCollection.find().toArray();
       res.send(result);
