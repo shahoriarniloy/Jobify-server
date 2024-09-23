@@ -283,6 +283,27 @@ app.post('/users',async (req,res)=>{
       }
     });
 
+    app.delete('/bookmarks/:email/:jobId', async (req, res) => {
+      const { email, jobId } = req.params;
+    
+      try {
+        const bookmark = await bookmarksCollection.findOne({ userEmail: email, jobId });
+    
+        if (!bookmark) {
+          return res.status(404).json({ message: 'Bookmark not found' });
+        }
+    
+        await bookmarksCollection.deleteOne({ userEmail: email, jobId });
+    
+        res.status(200).json({ message: 'Bookmark deleted successfully' });
+      } catch (error) {
+        console.error('Error deleting bookmark:', error);
+        res.status(500).json({ message: 'Server error' });
+      }
+    });
+    
+    
+
 
     app.get('/jobs/:id', async (req, res) => {
       const { id } = req.params;
