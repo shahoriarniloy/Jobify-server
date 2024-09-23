@@ -79,13 +79,27 @@ async function run() {
 
     // Job Related API
     // get all jobs
-    app.get("/jobs", async (req, res) => {
+    app.get("/jobs/all", async (req, res) => {
       const result = await jobsCollection.find().toArray();
       res.send(result);
     });
 
+    // get jobs for pagination
+    app.get("/jobs", async (req, res) => {
+      const page = parseInt(req.query.page) || 1;  // Default to page 1 if not provided
+      const limit = parseInt(req.query.limit) || 6;  // Default limit is 6 jobs per page
+      const skip = (page - 1) * limit;
+    
+      const jobs = await jobsCollection.find().skip(skip).limit(limit).toArray();
+      const totalJobs = await jobsCollection.countDocuments();  // Get total number of jobs
+      const totalPages = Math.ceil(totalJobs / limit);
+    
+      res.send({ jobs, totalPages });
+    });
+    
+
     // get single job
-    app.get("/jobs/:id", async (req, res) => {
+    app.get("/job/:id", async (req, res) => {
       const { id } = req.params; // Get ID from request parameters
       try {
         const result = await jobsCollection.findOne({ _id: id }); // Treat _id as a string
