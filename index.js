@@ -40,7 +40,16 @@ async function run() {
    
     const database = client.db("jobifyDB");
     
-
+    const jobCollection = database.collection('jobs');
+    
+    // POST API to insert job data into the database
+    app.post('/postJob', async (req, res) => {
+       const jobData = req.body;
+       const result = await jobCollection.insertOne(jobData);
+       res.send(result);
+     });
+       
+    
     
  
     
