@@ -43,6 +43,8 @@ async function run() {
     const userCollection = database.collection("users");
     const bookmarksCollection = database.collection("bookmarks");
 
+    const { ObjectId } = require('mongodb');
+
     
 
 
@@ -170,6 +172,45 @@ async function run() {
         res.status(500).send("Server Error");
     }
 });
+
+app.get("/companies", async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 0;
+    const size = parseInt(req.query.size) || 10;
+    const searchTerm = req.query.searchTerm || "";
+    if (searchTerm) {
+      query.company_name = { $regex: searchTerm, $options: "i" }; 
+    }
+
+    const totalCompanies = await companiesCollection.countDocuments(query); 
+    const companies = await companiesCollection
+      .find(query)
+      .skip(page * size)
+      .limit(size)
+      .toArray(); 
+
+    res.json({
+      totalCompanies,
+      Companies: companies,
+    });
+  } catch (error) {
+    console.error("Error fetching companies:", error);
+    res.status(500).json({ message: "Server Error" });
+  }
+});
+
+
+
+app.get("/companies/count", async (req, res) => {
+  try {
+    const count = await companiesCollection.countDocuments();
+    res.json({ totalCompanies: count });
+  } catch (error) {
+    console.error("Error counting companies:", error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 
   
 
@@ -301,6 +342,27 @@ app.post('/users',async (req,res)=>{
         res.status(500).json({ message: 'Server error' });
       }
     });
+
+
+    app.get("/companies/search", async (req, res) => {
+      const { searchTerm } = req.query;
+    
+      try {
+        let query = {};
+        if (searchTerm) {
+          query = {
+            company_name: { $regex: searchTerm, $options: "i" }, 
+          };
+        }
+    
+        const companies = await companiesCollection.find(query).toArray();
+        res.json(companies);
+      } catch (error) {
+        console.error("Error searching companies:", error);
+        res.status(500).json({ message: "Server Error" });
+      }
+    });
+    
     
     
 
