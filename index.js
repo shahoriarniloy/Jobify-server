@@ -43,6 +43,44 @@ async function run() {
     const userCollection = database.collection("users");
     const bookmarksCollection = database.collection("bookmarks");
 
+    
+    const jobCollection = database.collection('jobs');
+    
+    // POST API to insert job data into the database
+    app.post('/postJob', async (req, res) => {
+      const jobData = req.body;
+    
+      // You can add validation or transformation here if needed
+    
+      try {
+        const result = await jobCollection.insertOne(jobData);
+        res.status(201).send(result); // 201 Created
+      } catch (error) {
+        console.error('Error posting job:', error);
+        res.status(500).send({ message: 'Internal Server Error' });
+      }
+    });
+
+    app.get('/company-jobs/:id', async (req, res) => {
+      const companyId = req.params.id;
+      console.log("Fetching jobs for company:", companyId);
+      
+      try {
+        const jobs = await jobsCollection.find({ company_id: companyId }).toArray(); 
+        
+        if (jobs.length > 0) {
+          res.status(200).json(jobs);
+        } else {
+          res.status(404).json({ message: 'No jobs found for this company.' });
+        }
+      } catch (error) {
+        console.error('Error fetching jobs:', error);
+        res.status(500).json({ message: 'Internal Server Error' });
+      }
+    });
+    
+    
+    
 
     
 
@@ -229,6 +267,25 @@ app.post('/users',async (req,res)=>{
   const result = await userCollection.insertOne(user);
   res.send(result);
 })
+
+app.get('/user-role', async (req, res) => {
+  const email = req.query.email;
+  console.log("Called");
+  console.log('email', email);
+  try {
+      const user = await userCollection.findOne({ email });
+      if (user) {
+          return res.send({ role: user.role, id: user._id }); 
+      } else {
+          return res.status(404).send({ message: 'User not found' });
+      }
+  } catch (error) {
+      console.error('Error retrieving user role:', error);
+      res.status(500).send({ message: 'Internal server error' });
+  }
+});
+
+
 
 
 
