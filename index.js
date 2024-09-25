@@ -178,11 +178,15 @@ app.get("/companies", async (req, res) => {
     const page = parseInt(req.query.page) || 0;
     const size = parseInt(req.query.size) || 10;
     const searchTerm = req.query.searchTerm || "";
+
+    const query = {};
+
     if (searchTerm) {
       query.company_name = { $regex: searchTerm, $options: "i" }; 
     }
 
     const totalCompanies = await companiesCollection.countDocuments(query); 
+
     const companies = await companiesCollection
       .find(query)
       .skip(page * size)
@@ -198,6 +202,7 @@ app.get("/companies", async (req, res) => {
     res.status(500).json({ message: "Server Error" });
   }
 });
+
 
 
 
@@ -427,6 +432,25 @@ app.post('/users',async (req,res)=>{
       const cursor = reviewsCollection.find();
       const result = await cursor.toArray();
       res.send(result);
+  });
+
+
+  
+
+  app.get("/job/:id", async (req, res) => {
+    const { id } = req.params; 
+    try {
+      const result = await jobsCollection.findOne({ _id: id }); 
+
+      if (!result) {
+        return res.status(404).send("Job not found");
+      }
+
+      res.send(result);
+    } catch (error) {
+      console.error(error);
+      res.status(500).send("Server Error");
+    }
   });
   
 
