@@ -8,15 +8,14 @@ const port = process.env.PORT || 5000;
   
 
 app.use(
-    cors({
-        origin: [
-            'http://localhost:5173', 
-            ],
-        credentials: true,
-    }),
-  )
+  cors({
+      origin: [
+          'http://localhost:5174', // React app's origin
+      ],
+      credentials: true, // if you need to send cookies or auth headers
+  })
+);
 
-  app.use(express.json());
 
 
 
@@ -49,7 +48,12 @@ async function run() {
        res.send(result);
      });
        
-    
+    // GET API to fetch job data from the database
+app.get('/jobs', async (req, res) => {
+  const jobs = await jobCollection.find({}).toArray();
+  res.send(jobs);
+});
+
     
  
     
