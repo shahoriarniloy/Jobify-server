@@ -43,7 +43,6 @@ async function run() {
     const userCollection = database.collection("users");
     const bookmarksCollection = database.collection("bookmarks");
 
-    const { ObjectId } = require('mongodb');
 
     
 
@@ -277,23 +276,21 @@ app.post('/users',async (req,res)=>{
 
 
   
-
-    app.get("/companies/:id", async (req, res) => {
-      const { id } = req.params;
-      try {
-        const result = await companiesCollection.findOne({
-          _id: new ObjectId(id),
-        });
-        if (!result) {
-          return res.status(404).send("Company not found");
-        }
-        res.send(result);
-      } catch (error) {
-        console.error('Error fetching company by ID:', error);
-        res.status(500).send("Server Error");
+  app.get("/companies/:id", async (req, res) => {
+    const { id } = req.params;
+    
+    try {
+      const result = await companiesCollection.findOne({ _id: new ObjectId(id) });
+      if (!result) {
+        return res.status(404).send("Company not found");
       }
-    });
-
+      res.send(result);
+    } catch (error) {
+      console.error("Error fetching company by ID:", error);
+      res.status(500).send("Server Error");
+    }
+  });
+  
 
     app.post('/bookmarks', async (req, res) => {
       const { userEmail, jobId } = req.body;
@@ -437,21 +434,33 @@ app.post('/users',async (req,res)=>{
 
   
 
-  app.get("/job/:id", async (req, res) => {
+  app.get("/single-job/:id", async (req, res) => {
+
+    console.log("API Called");
     const { id } = req.params; 
+    console.log("Id:",id);
+
+    console.log('Jobs Collection:', jobsCollection);
+
+    if (!ObjectId.isValid(id)) {
+      return res.status(400).json({ error: "Invalid Job ID" }); 
+    }
+    
     try {
-      const result = await jobsCollection.findOne({ _id: id }); 
-
+      const result = await jobsCollection.findOne({ _id: id });
+      console.log('result:',result);
+  
       if (!result) {
-        return res.status(404).send("Job not found");
+        return res.status(404).json({ error: "Job not found" });
       }
-
-      res.send(result);
+  
+      res.json(result);
     } catch (error) {
       console.error(error);
-      res.status(500).send("Server Error");
+      res.status(500).json({ error: "Server Error" });
     }
-  });
+});
+
   
 
     console.log("Successfully connected to MongoDB!");
