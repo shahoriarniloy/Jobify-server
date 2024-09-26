@@ -46,15 +46,13 @@ async function run() {
     
     const jobCollection = database.collection('jobs');
     
-    // POST API to insert job data into the database
     app.post('/postJob', async (req, res) => {
       const jobData = req.body;
     
-      // You can add validation or transformation here if needed
     
       try {
         const result = await jobCollection.insertOne(jobData);
-        res.status(201).send(result); // 201 Created
+        res.status(201).send(result); 
       } catch (error) {
         console.error('Error posting job:', error);
         res.status(500).send({ message: 'Internal Server Error' });
