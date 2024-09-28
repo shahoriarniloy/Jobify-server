@@ -60,7 +60,7 @@ async function run() {
 
     app.get("/company-jobs/:id", async (req, res) => {
       const companyId = req.params.id;
-      console.log("Fetching jobs for company:", companyId);
+      // console.log("Fetching jobs for company:", companyId);
 
       try {
         const jobs = await jobsCollection
@@ -141,7 +141,7 @@ async function run() {
         query.jobLevel = { $in: jobLevel.split(",") };
       }
 
-      console.log("salary range:", salaryRange);
+      // console.log("salary range:", salaryRange);
 
       if (salaryRange && salaryRange.includes("-")) {
         const [minSalary, maxSalary] = salaryRange
@@ -149,7 +149,7 @@ async function run() {
           .split("-")
           .map(Number);
 
-        console.log(minSalary, maxSalary);
+        // console.log(minSalary, maxSalary);
 
         if (!isNaN(minSalary) && !isNaN(maxSalary)) {
           query.salaryRange = {
@@ -163,9 +163,9 @@ async function run() {
       }
 
       try {
-        console.log("Query:", query);
-        console.log("Advanced search endpoint hit");
-        console.log("Query:", JSON.stringify(query, null, 2));
+        // console.log("Query:", query);
+        // console.log("Advanced search endpoint hit");
+        // console.log("Query:", JSON.stringify(query, null, 2));
 
         const totalJobs = await jobsCollection.countDocuments(query);
 
@@ -175,7 +175,7 @@ async function run() {
           .limit(size);
         const result = await cursor.toArray();
         res.json({ totalJobs, jobs: result });
-        console.log("Query Result:", result);
+        // console.log("Query Result:", result);
       } catch (error) {
         console.error("Error fetching jobs:", error);
         res.status(500).send("Server Error");
@@ -267,8 +267,8 @@ async function run() {
 
     app.get("/user-role", async (req, res) => {
       const email = req.query.email;
-      console.log("Called");
-      console.log("email", email);
+      // console.log("Called");
+      // console.log("email", email);
       try {
         const user = await userCollection.findOne({ email });
         if (user) {
@@ -304,13 +304,13 @@ async function run() {
 
     app.get("/jobs/company/:companyId", async (req, res) => {
       const { companyId } = req.params;
-      console.log("company id:", companyId);
+      // console.log("company id:", companyId);
 
       try {
         const jobs = await jobsCollection
           .find({ company_id: companyId })
           .toArray();
-        console.log(jobs);
+        // console.log(jobs);
 
         if (!jobs.length) {
           return res.status(404).send("No jobs found for this company");
@@ -444,14 +444,14 @@ async function run() {
         const size = parseInt(req.query.size) || 10;
         const currentDate = new Date();
 
-        console.log("Current Date:", currentDate);
+        // console.log("Current Date:", currentDate);
 
         const currentDateString = currentDate.toISOString().split("T")[0];
         const query = { deadline: { $gte: currentDateString } };
 
         const totalJobs = await jobsCollection.countDocuments(query);
 
-        console.log("Total Jobs Found:", totalJobs);
+        // console.log("Total Jobs Found:", totalJobs);
 
         const cursor = jobsCollection
           .find(query)
@@ -459,7 +459,7 @@ async function run() {
           .limit(size);
         const result = await cursor.toArray();
 
-        console.log("Jobs Result:", result);
+        // console.log("Jobs Result:", result);
 
         res.json({ totalJobs, jobs: result });
       } catch (error) {
@@ -481,11 +481,11 @@ async function run() {
     });
 
     app.get("/single-job/:id", async (req, res) => {
-      console.log("API Called");
+      // console.log("API Called");
       const { id } = req.params;
-      console.log("Id:", id);
+      // console.log("Id:", id);
 
-      console.log("Jobs Collection:", jobsCollection);
+      // console.log("Jobs Collection:", jobsCollection);
 
       if (!ObjectId.isValid(id)) {
         return res.status(400).json({ error: "Invalid Job ID" });
@@ -493,7 +493,7 @@ async function run() {
 
       try {
         const result = await jobsCollection.findOne({ _id: id });
-        console.log("result:", result);
+        // console.log("result:", result);
 
         if (!result) {
           return res.status(404).json({ error: "Job not found" });
@@ -503,6 +503,18 @@ async function run() {
       } catch (error) {
         console.error(error);
         res.status(500).json({ error: "Server Error" });
+      }
+    });
+
+    // find all bookmark
+    app.get("/all_jobs", async (req, res) => {
+      try {
+        const cursor = jobsCollection.find({}); // Find all jobs
+        const result = await cursor.toArray(); // Convert the cursor to an array
+        res.send(result); // Send the result as the response
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).send({ message: "Failed to fetch jobs" });
       }
     });
 
@@ -541,6 +553,35 @@ async function run() {
       } catch (error) {
         console.error("Error checking application:", error);
         res.status(500).send({ message: "Error checking application status" });
+      }
+    });
+
+
+    // get jobs for pagination
+    app.get("/jobs_pagination", async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit) || 6; // Default limit is 6 jobs per page
+        const skip = (page - 1) * limit;       
+        const jobType = req.query.type; // Get jobType from query parameters
+        const query = jobType ? { jobType } : {}; // Build query to filter by jobType if provided
+
+        const jobs = await jobsCollection
+          .find(query)
+          .skip(skip)
+          .limit(limit)
+          .toArray(); // Fetch jobs based on query
+        const totalJobs = await jobsCollection.countDocuments(query); // Count total jobs based on query
+        const totalPages = Math.ceil(totalJobs / limit); // Calculate total pages
+
+        if (jobs.length === 0) {
+          return res.status(404).send({ error: "No jobs found" }); // Handle empty job array
+        }
+
+        res.send({ jobs, totalPages }); // Return jobs and total pages
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).send({ error: "Internal server error" });
       }
     });
 
