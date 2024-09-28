@@ -22,6 +22,7 @@ app.use(express.json());
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.dxgrzuk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -43,11 +44,9 @@ async function run() {
     const jobCollection = database.collection("jobs");
     const applicationsCollection = database.collection("applications");
 
-    // POST API to insert job data into the database
     app.post("/postJob", async (req, res) => {
       const jobData = req.body;
 
-      // You can add validation or transformation here if needed
 
       try {
         const result = await jobCollection.insertOne(jobData);
@@ -474,11 +473,30 @@ async function run() {
       res.send(result);
     });
 
+    // app.get("/reviews", async (req, res) => {
+    //   const cursor = reviewsCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // });
+
     app.get("/reviews", async (req, res) => {
-      const cursor = reviewsCollection.find();
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 3; 
+  
+      const skip = (page - 1) * limit;
+  
+      const cursor = reviewsCollection.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
       const result = await cursor.toArray();
-      res.send(result);
-    });
+      const totalReviews = await reviewsCollection.countDocuments();
+  
+      res.send({
+          reviews: result,
+          totalPages: Math.ceil(totalReviews / limit),
+          currentPage: page,
+      });
+  });
+  
+    
 
     app.get("/single-job/:id", async (req, res) => {
       console.log("API Called");
@@ -506,12 +524,10 @@ async function run() {
       }
     });
 
-    // apply job
     app.post("/apply_job", async (req, res) => {
       try {
-        const application = req.body; // This will contain the application data
+        const application = req.body; 
 
-        // Assuming applicationsCollection is your MongoDB collection
         const result = await applicationsCollection.insertOne(application);
 
         res
@@ -523,7 +539,6 @@ async function run() {
       }
     });
 
-    // check application status
     app.get("/check_application", async (req, res) => {
       const { job_id, user_email } = req.query;
 
