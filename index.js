@@ -22,6 +22,7 @@ app.use(express.json());
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.dxgrzuk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -43,15 +44,13 @@ async function run() {
     const jobCollection = database.collection("jobs");
     const applicationsCollection = database.collection("applications");
 
-    // POST API to insert job data into the database
     app.post("/postJob", async (req, res) => {
       const jobData = req.body;
 
-      // You can add validation or transformation here if needed
 
       try {
         const result = await jobCollection.insertOne(jobData);
-        res.status(201).send(result); // 201 Created
+        res.status(201).send(result); 
       } catch (error) {
         console.error("Error posting job:", error);
         res.status(500).send({ message: "Internal Server Error" });
@@ -474,11 +473,30 @@ async function run() {
       res.send(result);
     });
 
+    // app.get("/reviews", async (req, res) => {
+    //   const cursor = reviewsCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // });
+
     app.get("/reviews", async (req, res) => {
-      const cursor = reviewsCollection.find();
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 3; 
+  
+      const skip = (page - 1) * limit;
+  
+      const cursor = reviewsCollection.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
       const result = await cursor.toArray();
-      res.send(result);
-    });
+      const totalReviews = await reviewsCollection.countDocuments();
+  
+      res.send({
+          reviews: result,
+          totalPages: Math.ceil(totalReviews / limit),
+          currentPage: page,
+      });
+  });
+  
+    
 
     app.get("/single-job/:id", async (req, res) => {
       // console.log("API Called");
@@ -506,24 +524,23 @@ async function run() {
       }
     });
 
-    // find all bookmark
+
     app.get("/all_jobs", async (req, res) => {
       try {
-        const cursor = jobsCollection.find({}); // Find all jobs
-        const result = await cursor.toArray(); // Convert the cursor to an array
-        res.send(result); // Send the result as the response
+        const cursor = jobsCollection.find({}); 
+        const result = await cursor.toArray(); 
+        res.send(result); 
       } catch (error) {
         console.error("Error fetching jobs:", error);
         res.status(500).send({ message: "Failed to fetch jobs" });
       }
     });
 
-    // apply job
+
     app.post("/apply_job", async (req, res) => {
       try {
-        const application = req.body; // This will contain the application data
+        const application = req.body; 
 
-        // Assuming applicationsCollection is your MongoDB collection
         const result = await applicationsCollection.insertOne(application);
 
         res
@@ -535,7 +552,6 @@ async function run() {
       }
     });
 
-    // check application status
     app.get("/check_application", async (req, res) => {
       const { job_id, user_email } = req.query;
 
@@ -556,61 +572,55 @@ async function run() {
       }
     });
 
-    // get Related jobs for pagination
     app.get("/RelatedJobs", async (req, res) => {
       try {
-        const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
-        const limit = parseInt(req.query.limit) || 6; // Default limit is 6 jobs per page
+        const page = parseInt(req.query.page) || 1; 
+        const limit = parseInt(req.query.limit) || 6; 
         const skip = (page - 1) * limit;
-        const jobType = req.query.type; // Get jobType from query parameters
-        const query = jobType ? { jobType } : {}; // Build query to filter by jobType if provided
+        const jobType = req.query.type; 
+        const query = jobType ? { jobType } : {}; 
 
         const jobs = await jobsCollection
           .find(query)
           .skip(skip)
           .limit(limit)
-          .toArray(); // Fetch jobs based on query
-        const totalJobs = await jobsCollection.countDocuments(query); // Count total jobs based on query
-        const totalPages = Math.ceil(totalJobs / limit); // Calculate total pages
+          .toArray(); 
+        const totalJobs = await jobsCollection.countDocuments(query); 
+        const totalPages = Math.ceil(totalJobs / limit); 
 
         if (jobs.length === 0) {
-          return res.status(404).send({ error: "No jobs found" }); // Handle empty job array
+          return res.status(404).send({ error: "No jobs found" }); 
         }
 
-        res.send({ jobs, totalPages }); // Return jobs and total pages
+        res.send({ jobs, totalPages }); 
       } catch (error) {
         console.error("Error fetching jobs:", error);
         res.status(500).send({ error: "Internal server error" });
       }
     });
 
-    // get Open position for pagination
     app.get("/OpenPosition", async (req, res) => {
       try {
-        const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
-        const limit = parseInt(req.query.limit) || 6; // Default limit is 6 jobs per page
+        const page = parseInt(req.query.page) || 1; 
+        const limit = parseInt(req.query.limit) || 6; 
         const skip = (page - 1) * limit;
-        const company_id = req.query.companyId; // Get company ID from query parameters
+        const company_id = req.query.companyId; 
 
-        // Build query to filter by company ID if provided
-        const query = company_id ? { company_id } : {}; // Match field in your database
+        const query = company_id ? { company_id } : {}; 
 
-        // Fetch jobs based on query, skipping and limiting results
         const jobs = await jobsCollection
           .find(query)
           .skip(skip)
           .limit(limit)
           .toArray();
 
-        const totalJobs = await jobsCollection.countDocuments(query); // Count total jobs based on query
-        const totalPages = Math.ceil(totalJobs / limit); // Calculate total pages
+        const totalJobs = await jobsCollection.countDocuments(query); 
+        const totalPages = Math.ceil(totalJobs / limit); 
 
-        // Check if jobs were found
         if (jobs.length === 0) {
-          return res.status(404).send({ error: "No jobs found" }); // Handle empty job array
+          return res.status(404).send({ error: "No jobs found" }); 
         }
 
-        // Return jobs and total pages
         res.send({ jobs, totalPages });
       } catch (error) {
         console.error("Error fetching jobs:", error);
