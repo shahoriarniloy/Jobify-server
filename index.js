@@ -556,13 +556,12 @@ async function run() {
       }
     });
 
-
-    // get jobs for pagination
-    app.get("/jobs_pagination", async (req, res) => {
+    // get Related jobs for pagination
+    app.get("/RelatedJobs", async (req, res) => {
       try {
         const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
         const limit = parseInt(req.query.limit) || 6; // Default limit is 6 jobs per page
-        const skip = (page - 1) * limit;       
+        const skip = (page - 1) * limit;
         const jobType = req.query.type; // Get jobType from query parameters
         const query = jobType ? { jobType } : {}; // Build query to filter by jobType if provided
 
@@ -579,6 +578,40 @@ async function run() {
         }
 
         res.send({ jobs, totalPages }); // Return jobs and total pages
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).send({ error: "Internal server error" });
+      }
+    });
+
+    // get Open position for pagination
+    app.get("/OpenPosition", async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1; // Default to page 1 if not provided
+        const limit = parseInt(req.query.limit) || 6; // Default limit is 6 jobs per page
+        const skip = (page - 1) * limit;
+        const company_id = req.query.companyId; // Get company ID from query parameters
+
+        // Build query to filter by company ID if provided
+        const query = company_id ? { company_id } : {}; // Match field in your database
+
+        // Fetch jobs based on query, skipping and limiting results
+        const jobs = await jobsCollection
+          .find(query)
+          .skip(skip)
+          .limit(limit)
+          .toArray();
+
+        const totalJobs = await jobsCollection.countDocuments(query); // Count total jobs based on query
+        const totalPages = Math.ceil(totalJobs / limit); // Calculate total pages
+
+        // Check if jobs were found
+        if (jobs.length === 0) {
+          return res.status(404).send({ error: "No jobs found" }); // Handle empty job array
+        }
+
+        // Return jobs and total pages
+        res.send({ jobs, totalPages });
       } catch (error) {
         console.error("Error fetching jobs:", error);
         res.status(500).send({ error: "Internal server error" });
