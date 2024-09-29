@@ -22,6 +22,7 @@ app.use(express.json());
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.dxgrzuk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
+
 const client = new MongoClient(uri, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -43,15 +44,13 @@ async function run() {
     const jobCollection = database.collection("jobs");
     const applicationsCollection = database.collection("applications");
 
-    // POST API to insert job data into the database
     app.post("/postJob", async (req, res) => {
       const jobData = req.body;
 
-      // You can add validation or transformation here if needed
 
       try {
         const result = await jobCollection.insertOne(jobData);
-        res.status(201).send(result); // 201 Created
+        res.status(201).send(result); 
       } catch (error) {
         console.error("Error posting job:", error);
         res.status(500).send({ message: "Internal Server Error" });
@@ -60,7 +59,7 @@ async function run() {
 
     app.get("/company-jobs/:id", async (req, res) => {
       const companyId = req.params.id;
-      console.log("Fetching jobs for company:", companyId);
+      // console.log("Fetching jobs for company:", companyId);
 
       try {
         const jobs = await jobsCollection
@@ -141,7 +140,7 @@ async function run() {
         query.jobLevel = { $in: jobLevel.split(",") };
       }
 
-      console.log("salary range:", salaryRange);
+      // console.log("salary range:", salaryRange);
 
       if (salaryRange && salaryRange.includes("-")) {
         const [minSalary, maxSalary] = salaryRange
@@ -149,7 +148,7 @@ async function run() {
           .split("-")
           .map(Number);
 
-        console.log(minSalary, maxSalary);
+        // console.log(minSalary, maxSalary);
 
         if (!isNaN(minSalary) && !isNaN(maxSalary)) {
           query.salaryRange = {
@@ -163,9 +162,9 @@ async function run() {
       }
 
       try {
-        console.log("Query:", query);
-        console.log("Advanced search endpoint hit");
-        console.log("Query:", JSON.stringify(query, null, 2));
+        // console.log("Query:", query);
+        // console.log("Advanced search endpoint hit");
+        // console.log("Query:", JSON.stringify(query, null, 2));
 
         const totalJobs = await jobsCollection.countDocuments(query);
 
@@ -175,7 +174,7 @@ async function run() {
           .limit(size);
         const result = await cursor.toArray();
         res.json({ totalJobs, jobs: result });
-        console.log("Query Result:", result);
+        // console.log("Query Result:", result);
       } catch (error) {
         console.error("Error fetching jobs:", error);
         res.status(500).send("Server Error");
@@ -267,8 +266,8 @@ async function run() {
 
     app.get("/user-role", async (req, res) => {
       const email = req.query.email;
-      console.log("Called");
-      console.log("email", email);
+      // console.log("Called");
+      // console.log("email", email);
       try {
         const user = await userCollection.findOne({ email });
         if (user) {
@@ -304,13 +303,13 @@ async function run() {
 
     app.get("/jobs/company/:companyId", async (req, res) => {
       const { companyId } = req.params;
-      console.log("company id:", companyId);
+      // console.log("company id:", companyId);
 
       try {
         const jobs = await jobsCollection
           .find({ company_id: companyId })
           .toArray();
-        console.log(jobs);
+        // console.log(jobs);
 
         if (!jobs.length) {
           return res.status(404).send("No jobs found for this company");
@@ -383,6 +382,9 @@ async function run() {
       }
     });
 
+    
+    
+
     app.delete("/bookmarks/:email/:jobId", async (req, res) => {
       const { email, jobId } = req.params;
 
@@ -444,14 +446,14 @@ async function run() {
         const size = parseInt(req.query.size) || 10;
         const currentDate = new Date();
 
-        console.log("Current Date:", currentDate);
+        // console.log("Current Date:", currentDate);
 
         const currentDateString = currentDate.toISOString().split("T")[0];
         const query = { deadline: { $gte: currentDateString } };
 
         const totalJobs = await jobsCollection.countDocuments(query);
 
-        console.log("Total Jobs Found:", totalJobs);
+        // console.log("Total Jobs Found:", totalJobs);
 
         const cursor = jobsCollection
           .find(query)
@@ -459,7 +461,7 @@ async function run() {
           .limit(size);
         const result = await cursor.toArray();
 
-        console.log("Jobs Result:", result);
+        // console.log("Jobs Result:", result);
 
         res.json({ totalJobs, jobs: result });
       } catch (error) {
@@ -474,18 +476,37 @@ async function run() {
       res.send(result);
     });
 
+    // app.get("/reviews", async (req, res) => {
+    //   const cursor = reviewsCollection.find();
+    //   const result = await cursor.toArray();
+    //   res.send(result);
+    // });
+
     app.get("/reviews", async (req, res) => {
-      const cursor = reviewsCollection.find();
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 3; 
+  
+      const skip = (page - 1) * limit;
+  
+      const cursor = reviewsCollection.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
       const result = await cursor.toArray();
-      res.send(result);
-    });
+      const totalReviews = await reviewsCollection.countDocuments();
+  
+      res.send({
+          reviews: result,
+          totalPages: Math.ceil(totalReviews / limit),
+          currentPage: page,
+      });
+  });
+  
+    
 
     app.get("/single-job/:id", async (req, res) => {
-      console.log("API Called");
+      // console.log("API Called");
       const { id } = req.params;
-      console.log("Id:", id);
+      // console.log("Id:", id);
 
-      console.log("Jobs Collection:", jobsCollection);
+      // console.log("Jobs Collection:", jobsCollection);
 
       if (!ObjectId.isValid(id)) {
         return res.status(400).json({ error: "Invalid Job ID" });
@@ -493,7 +514,7 @@ async function run() {
 
       try {
         const result = await jobsCollection.findOne({ _id: id });
-        console.log("result:", result);
+        // console.log("result:", result);
 
         if (!result) {
           return res.status(404).json({ error: "Job not found" });
@@ -506,12 +527,23 @@ async function run() {
       }
     });
 
-    // apply job
+
+    app.get("/all_jobs", async (req, res) => {
+      try {
+        const cursor = jobsCollection.find({}); 
+        const result = await cursor.toArray(); 
+        res.send(result); 
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).send({ message: "Failed to fetch jobs" });
+      }
+    });
+
+
     app.post("/apply_job", async (req, res) => {
       try {
-        const application = req.body; // This will contain the application data
+        const application = req.body; 
 
-        // Assuming applicationsCollection is your MongoDB collection
         const result = await applicationsCollection.insertOne(application);
 
         res
@@ -523,7 +555,6 @@ async function run() {
       }
     });
 
-    // check application status
     app.get("/check_application", async (req, res) => {
       const { job_id, user_email } = req.query;
 
@@ -541,6 +572,68 @@ async function run() {
       } catch (error) {
         console.error("Error checking application:", error);
         res.status(500).send({ message: "Error checking application status" });
+      }
+    });
+
+    app.get("/RelatedJobs", async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1; 
+        const limit = parseInt(req.query.limit) || 6; 
+        const skip = (page - 1) * limit; 
+        const jobTitle = req.query.title; 
+        console.log(jobTitle);
+    
+        const query = jobTitle ? { title: { $regex: jobTitle, $options: "i" } } : {};
+    
+        const jobs = await jobsCollection.find(query).skip(skip).limit(limit).toArray();
+        
+        const totalJobs = await jobsCollection.countDocuments(query);
+        
+        const totalPages = Math.ceil(totalJobs / limit);
+    
+        if (jobs.length === 0) {
+          return res.status(404).send({ error: "No jobs found" });
+        }
+    
+        res.send({
+          jobs,
+          currentPage: page,
+          totalPages,
+          totalJobs
+        });
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).send({ error: "Internal server error" });
+      }
+    });
+    
+
+    app.get("/OpenPosition", async (req, res) => {
+      try {
+        const page = parseInt(req.query.page) || 1; 
+        const limit = parseInt(req.query.limit) || 6; 
+        const skip = (page - 1) * limit;
+        const company_id = req.query.companyId; 
+
+        const query = company_id ? { company_id } : {}; 
+
+        const jobs = await jobsCollection
+          .find(query)
+          .skip(skip)
+          .limit(limit)
+          .toArray();
+
+        const totalJobs = await jobsCollection.countDocuments(query); 
+        const totalPages = Math.ceil(totalJobs / limit); 
+
+        if (jobs.length === 0) {
+          return res.status(404).send({ error: "No jobs found" }); 
+        }
+
+        res.send({ jobs, totalPages });
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).send({ error: "Internal server error" });
       }
     });
 
