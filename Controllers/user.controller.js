@@ -1,4 +1,4 @@
-import { reviewsCollection, userCollection } from './../Models/database.model.js';
+import { applicationsCollection, bookmarksCollection, messagesCollection, reviewsCollection, userCollection } from './../Models/database.model.js';
 
 
 export const createUser = async (req, res) => {
@@ -26,13 +26,27 @@ export const getUserRole = async (req, res) => {
     }
 }
 
+// export const getUserBookmark = async (req, res) => {
+//     const email = req.query?.email;
+//     try {
+//         const bookmarks = await bookmarksCollection
+//             .find({ userEmail:email})
+//             .toArray();
+//         res.send(bookmarks);
+//     } catch (error) {
+//         res.status(500).json({ message: "Server Error" });
+//     }
+// }
 export const getUserBookmark = async (req, res) => {
-    const { userEmail } = req.params;
+    const email = req.query?.email;
+    const jobId = req.query?.jobid
     try {
         const bookmarks = await bookmarksCollection
-            .find({ userEmail })
+            .find({ userEmail: email })
             .toArray();
-        res.json(bookmarks);
+
+
+
     } catch (error) {
         res.status(500).json({ message: "Server Error" });
     }
@@ -97,4 +111,118 @@ export const getAllReview = async (req, res) => {
     const cursor = reviewsCollection.find();
     const result = await cursor.toArray();
     res.send(result);
+}
+
+export const checkJobAlreadyApplied = async (req, res) => {
+    const email = req.query?.email;
+    const jobId = req.query?.jobid;
+
+    const findQuery = {
+        user_email: email,
+        job_id: jobId
+    }
+
+    const result = await applicationsCollection.findOne(findQuery.$);
+    if (result?.candidate_id) {
+        res.send({ verification: true })
+    }
+
+
+}
+
+export const sendMessage = async (req, res) => {
+    const messageData = req.body;
+
+    messageData.createdAt = new Date().toISOString();
+
+    try {
+        const result = await messagesCollection.insertOne(messageData);
+        res.status(201).send(result);
+    } catch (error) {
+        console.error("Error sending message:", error);
+        res.status(500).send({ message: "Internal Server Error" });
+    }
+}
+
+
+export const getMessage = async (req, res) => {
+    const { receiverEmail, senderEmail } = req.params;
+    console.log('receiverEmail', receiverEmail);
+    console.log('senderEmail', senderEmail);
+
+    try {
+        const messages = await messagesCollection.find({
+            $or: [
+                { senderEmail: senderEmail, receiverEmail: receiverEmail },
+                { senderEmail: receiverEmail, receiverEmail: senderEmail },
+            ],
+        }).sort({ createdAt: 1 }).toArray();
+
+        if (messages.length > 0) {
+            return res.status(200).json(messages);
+        } else {
+            return res.status(404).json({ message: "No messages found." });
+        }
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+}
+
+export const userDetails = async (req, res) => {
+    const email = req.query.email;
+
+    try {
+        const user = await userCollection.findOne({ email }, 'name photoURL');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching user details:', error);
+        res.status(500).json({ message: 'Server error' });
+    }
+}
+
+export const userConversion = async (req, res) => {
+    const currentUserEmail = req.query.email;
+    try {
+        const messages = await messagesCollection.find({
+            $or: [
+                { senderEmail: currentUserEmail },
+                { receiverEmail: currentUserEmail },
+            ],
+        }).sort({ createdAt: 1 }).toArray();
+
+        console.log('messages:', messages);
+
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        res.status(500).json({ message: "Server error" });
+    }
+}
+
+export const individualMessage = async (req, res) => {
+    const { email, otherPartyEmail } = req.query;
+    console.log('email', email);
+    console.log('other:', otherPartyEmail);
+
+    try {
+        const messagesAll = await messagesCollection.find({
+            $or: [
+                { senderEmail: email, receiverEmail: otherPartyEmail },
+                { senderEmail: otherPartyEmail, receiverEmail: email },
+            ],
+        }).sort({ createdAt: 1 });
+
+        const messages = await messagesAll.toArray();
+
+        res.status(200).json(messages);
+    } catch (error) {
+        console.error("Error fetching messages:", error);
+        res.status(500).json({ message: "Server error" });
+    }
 }

@@ -20,5 +20,6 @@ export const jobsCollection = database.collection("jobs");
 export const reviewsCollection = database.collection("reviews");
 export const userCollection = database.collection("users");
 export const bookmarksCollection = database.collection("bookmarks");
-export const jobCollection = database.collection("jobs");
 export const applicationsCollection = database.collection("applications");
+export const conversationsCollection = database.collection("conversations");
+export const messagesCollection = database.collection("messages");

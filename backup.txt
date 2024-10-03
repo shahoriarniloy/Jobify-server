@@ -40,7 +40,7 @@ async function run() {
     const reviewsCollection = database.collection("reviews");
     const userCollection = database.collection("users");
     const bookmarksCollection = database.collection("bookmarks");
-    const jobCollection = database.collection("jobs");
+    const  = database.collection("jobs");
     const applicationsCollection = database.collection("applications");
 
     // POST API to insert job data into the database
@@ -50,7 +50,7 @@ async function run() {
       // You can add validation or transformation here if needed
 
       try {
-        const result = await jobCollection.insertOne(jobData);
+        const result = await .insertOne(jobData);
         res.status(201).send(result); 
       } catch (error) {
         console.error("Error posting job:", error);
@@ -282,7 +282,7 @@ async function run() {
       }
     });
 
-    app.get("/jobs/count", async (req, res) => {
+    app.get("/jobs-count", async (req, res) => {
       try {
         const count = await jobsCollection.countDocuments();
         res.json({ totalJobs: count });
@@ -557,3 +557,27 @@ app.get("/", (req, res) => {
 app.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+const jobPromises = bookmarks.map(async (bm) => {
+                        const { data: job } = await axiosSecure.get(`/jobs/${bm.jobId}`);
+                        const appliedResponse = await axiosSecure.get("/check_application", {
+                            params: {
+                                job_id: job._id,
+                                user_email: currentUser.email,
+                            },
+                        });
+                        job.hasApplied = appliedResponse.data.applied;  // Adding applied status to the job object
+                        return job;
+                    });
