@@ -97,11 +97,11 @@ async function run() {
     const currentDate = new Date();
 
     app.get("/jobs/advanced-search", async (req, res) => {
-      const page = parseInt(req.query.page) || 0;
-      const size = parseInt(req.query.size) || 10;
+      const page = parseInt(req.query.page) ;
+      const size = parseInt(req.query.size) ;
       const currentDateString = new Date().toISOString().split("T")[0];
 
-      console.log("Advanced search endpoint hit");
+      // console.log("Advanced search endpoint hit");
       const {
         searchTerm,
         location,
@@ -229,6 +229,7 @@ async function run() {
         }
 
         const totalCompanies = await companiesCollection.countDocuments(query);
+        console.log('tota;',totalCompanies);
 
         const companies = await companiesCollection
           .find(query)
@@ -646,18 +647,15 @@ app.get('/individual-messages', async (req, res) => {
 
 
     app.post("/apply_job", async (req, res) => {
-      try {
-        const application = req.body; 
+
+      const application = req.body; 
 
         const result = await applicationsCollection.insertOne(application);
+        res.send(result);
 
-        res
-          .status(201)
-          .send({ message: "Application submitted successfully", result });
-      } catch (error) {
-        console.error("Error submitting application:", error);
-        res.status(500).send({ message: "Failed to submit application" });
-      }
+
+
+     
     });
 
     app.get("/check_application", async (req, res) => {
