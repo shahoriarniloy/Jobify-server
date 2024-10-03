@@ -684,6 +684,7 @@ app.get('/individual-messages', async (req, res) => {
       try {
         const page = parseInt(req.query.page) || 1; 
         const limit = parseInt(req.query.limit) || 6; 
+
         const skip = (page - 1) * limit; 
         const jobTitle = req.query.title; 
         console.log(jobTitle);
@@ -706,12 +707,32 @@ app.get('/individual-messages', async (req, res) => {
           totalPages,
           totalJobs
         });
+
+//         const skip = (page - 1) * limit;
+//         const jobType = req.query.type; 
+//         const query = jobType ? { jobType } : {}; 
+
+//         const jobs = await jobsCollection
+//           .find(query)
+//           .skip(skip)
+//           .limit(limit)
+//           .toArray(); 
+//         const totalJobs = await jobsCollection.countDocuments(query); 
+//         const totalPages = Math.ceil(totalJobs / limit); 
+
+//         if (jobs.length === 0) {
+//           return res.status(404).send({ error: "No jobs found" }); 
+//         }
+
+//         res.send({ jobs, totalPages }); 
+
       } catch (error) {
         console.error("Error fetching jobs:", error);
         res.status(500).send({ error: "Internal server error" });
       }
     });
-    
+
+
 
     app.get("/OpenPosition", async (req, res) => {
       try {
