@@ -43,6 +43,9 @@ async function run() {
     const bookmarksCollection = database.collection("bookmarks");
     const jobCollection = database.collection("jobs");
     const applicationsCollection = database.collection("applications");
+    const conversationsCollection = database.collection("conversations");
+    const messagesCollection = database.collection("messages");
+
 
     app.post("/postJob", async (req, res) => {
       const jobData = req.body;
@@ -382,6 +385,9 @@ async function run() {
       }
     });
 
+    
+    
+
     app.delete("/bookmarks/:email/:jobId", async (req, res) => {
       const { email, jobId } = req.params;
 
@@ -495,8 +501,110 @@ async function run() {
           currentPage: page,
       });
   });
-  
+
+
+app.post("/sendMessage", async (req, res) => {
+  const messageData = req.body;
+
+  messageData.createdAt = new Date().toISOString(); 
+
+  try {
+    const result = await messagesCollection.insertOne(messageData);
+    res.status(201).send(result);
+  } catch (error) {
+    console.error("Error sending message:", error);
+    res.status(500).send({ message: "Internal Server Error" });
+  }
+});
+
+app.get('/messages/:receiverEmail/:senderEmail', async (req, res) => {
+  const { receiverEmail, senderEmail } = req.params;
+  console.log('receiverEmail',receiverEmail);
+  console.log('senderEmail',senderEmail);
+
+  try {
+    const messages = await messagesCollection.find({
+      $or: [
+        { senderEmail: senderEmail, receiverEmail: receiverEmail },
+        { senderEmail: receiverEmail, receiverEmail: senderEmail },
+      ],
+    }).sort({ createdAt: 1 }).toArray(); 
+
+    if (messages.length > 0) {
+      return res.status(200).json(messages); 
+    } else {
+      return res.status(404).json({ message: "No messages found." }); 
+    }
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+});
+
+app.get('/user-details', async (req, res) => {
+  const email = req.query.email;
+
+  try {
+    const user = await userCollection.findOne({ email }, 'name photoURL');
     
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+
+app.get('/conversations', async (req, res) => {
+  const currentUserEmail = req.query.email;
+  try {
+    const messages = await messagesCollection.find({
+      $or: [
+        { senderEmail: currentUserEmail },
+        { receiverEmail: currentUserEmail },
+      ],
+    }).sort({ createdAt: 1 }).toArray(); 
+
+    console.log('messages:',messages);
+
+    res.status(200).json(messages);
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+app.get('/individual-messages', async (req, res) => {
+  const { email, otherPartyEmail } = req.query;
+  console.log('email',email);
+  console.log('other:',otherPartyEmail);
+
+  try {
+    const messagesAll = await messagesCollection.find({
+      $or: [
+        { senderEmail: email, receiverEmail: otherPartyEmail },
+        { senderEmail: otherPartyEmail, receiverEmail: email },
+      ],
+    }).sort({ createdAt: 1 }); 
+
+    const messages = await messagesAll.toArray(); 
+
+    res.status(200).json(messages); 
+  } catch (error) {
+    console.error("Error fetching messages:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
+
+
 
     app.get("/single-job/:id", async (req, res) => {
       // console.log("API Called");
@@ -576,28 +684,55 @@ async function run() {
       try {
         const page = parseInt(req.query.page) || 1; 
         const limit = parseInt(req.query.limit) || 6; 
-        const skip = (page - 1) * limit;
-        const jobType = req.query.type; 
-        const query = jobType ? { jobType } : {}; 
 
-        const jobs = await jobsCollection
-          .find(query)
-          .skip(skip)
-          .limit(limit)
-          .toArray(); 
-        const totalJobs = await jobsCollection.countDocuments(query); 
-        const totalPages = Math.ceil(totalJobs / limit); 
-
+        const skip = (page - 1) * limit; 
+        const jobTitle = req.query.title; 
+        console.log(jobTitle);
+    
+        const query = jobTitle ? { title: { $regex: jobTitle, $options: "i" } } : {};
+    
+        const jobs = await jobsCollection.find(query).skip(skip).limit(limit).toArray();
+        
+        const totalJobs = await jobsCollection.countDocuments(query);
+        
+        const totalPages = Math.ceil(totalJobs / limit);
+    
         if (jobs.length === 0) {
-          return res.status(404).send({ error: "No jobs found" }); 
+          return res.status(404).send({ error: "No jobs found" });
         }
+    
+        res.send({
+          jobs,
+          currentPage: page,
+          totalPages,
+          totalJobs
+        });
 
-        res.send({ jobs, totalPages }); 
+//         const skip = (page - 1) * limit;
+//         const jobType = req.query.type; 
+//         const query = jobType ? { jobType } : {}; 
+
+//         const jobs = await jobsCollection
+//           .find(query)
+//           .skip(skip)
+//           .limit(limit)
+//           .toArray(); 
+//         const totalJobs = await jobsCollection.countDocuments(query); 
+//         const totalPages = Math.ceil(totalJobs / limit); 
+
+//         if (jobs.length === 0) {
+//           return res.status(404).send({ error: "No jobs found" }); 
+//         }
+
+//         res.send({ jobs, totalPages }); 
+
       } catch (error) {
         console.error("Error fetching jobs:", error);
         res.status(500).send({ error: "Internal server error" });
       }
     });
+
+
 
     app.get("/OpenPosition", async (req, res) => {
       try {
