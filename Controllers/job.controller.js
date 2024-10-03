@@ -1,10 +1,11 @@
-import { jobCollection, jobsCollection } from "../Models/database.model.js";
+import { ObjectId } from "mongodb";
+import { applicationsCollection, jobsCollection } from "../Models/database.model.js";
 
 
 export const postAJob = async (req, res) => {
     const jobData = req.body;
     try {
-        const result = await jobCollection.insertOne(jobData);
+        const result = await jobsCollection.insertOne(jobData);
         res.status(200).send(result);
     } catch (error) {
         res.status(500).send({ message: "Internal Server Error" });
@@ -82,6 +83,129 @@ export const advanceSearch = async (req, res) => {
     }
 }
 
+// export const advanceSearch = async (req, res) => {
+//     const page = parseInt(req.query.page) || 0;
+//     const size = parseInt(req.query.size) || 10;
+//     const currentDateString = new Date().toISOString().split("T")[0];
+
+
+//     // const {
+//     //     searchTerm,
+//     //     location,
+//     //     experience,
+//     //     jobType,
+//     //     education,
+//     //     jobLevel,
+//     //     salaryRange,
+//     // } = req.query?.advanceFilteredData;
+//     console.log(req.query)
+
+//     // Aggregation pipeline array
+//     const pipeline = [];
+
+//     // 1. Deadline Filter
+//     pipeline.push({
+//         $match: { deadline: { $gte: currentDateString } }
+//     });
+
+//     // 2. Search Term Filter
+//     // Check company field with trimmed regex
+//     /**
+//     if (searchTerm) {
+//         pipeline.push({
+//             $match: {
+//                 $or: [
+//                     { title: { $regex: searchTerm.trim(), $options: "i" } },
+//                     { company: { $regex: searchTerm.trim(), $options: "i" } }
+//                 ]
+//             }
+//         });
+//     }
+
+
+//     // 3. Location Filter
+//     if (location && location.trim()) {
+//         pipeline.push({
+//             $match: {
+//                 location: { $regex: location, $options: "i" }
+//             }
+//         });
+//     }
+
+//     // 4. Experience Filter
+//     if (experience && experience.length > 0) {
+//         const experienceArray = experience.split(",");
+//         pipeline.push({
+//             $match: { experience: { $in: experienceArray } }
+//         });
+//     }
+
+//     // 5. Job Type Filter
+//     if (jobType && jobType.length > 0) {
+//         const jobTypeArray = jobType.split(",");
+//         pipeline.push({
+//             $match: { jobType: { $in: jobTypeArray } }
+//         });
+//     }
+
+//     // 6. Education Filter
+//     if (education && education.length > 0) {
+//         const educationArray = education.split(",");
+//         pipeline.push({
+//             $match: { education: { $in: educationArray } }
+//         });
+//     }
+
+//     // 7. Job Level Filter
+//     if (jobLevel && jobLevel.length > 0) {
+//         const jobLevelArray = jobLevel.split(",");
+//         pipeline.push({
+//             $match: { jobLevel: { $in: jobLevelArray } }
+//         });
+//     }
+
+//     // 8. Salary Range Filter
+//     if (salaryRange && salaryRange.includes("-")) {
+//         const [minSalary, maxSalary] = salaryRange.replace(/\$/g, "").split("-").map(Number);
+//         if (!isNaN(minSalary) && !isNaN(maxSalary)) {
+//             pipeline.push({
+//                 $match: {
+//                     salary: {
+//                         $gte: minSalary,
+//                         $lte: maxSalary
+//                     }
+//                 }
+//             });
+//         }
+//     }
+
+
+//     pipeline.push({ $skip: page * size });
+//     pipeline.push({ $limit: size });
+
+//     try {
+//         // Calculate total number of matching jobs
+//         const totalJobsPipeline = [...pipeline];
+//         totalJobsPipeline.push({ $count: "totalJobs" });
+//         const totalJobsResult = await jobsCollection.aggregate(totalJobsPipeline).toArray();
+//         const totalJobs = totalJobsResult.length > 0 ? totalJobsResult[0].totalJobs : 0;
+
+
+//         // Get paginated jobs
+//         const jobs = await jobsCollection.aggregate(pipeline).toArray();
+
+//         // console.log(totalJobsResult,totalJobs,jobs)
+
+//         res.json({ totalJobs, jobs });
+//     } catch (error) {
+//         console.error("Error in advanceSearch:", error);
+//         res.status(500).send("Server Error");
+//     }
+//     */
+// };
+
+
+
 export const searchLocation = async (req, res) => {
     const { searchTerm, location } = req.query;
     const currentDateString = new Date().toISOString().split("T")[0];
@@ -156,15 +280,11 @@ export const getAllJobs = async (req, res) => {
 };
 
 export const applyAJob = async (req, res) => {
-    try {
-        const application = req.body;
-        const result = await applicationsCollection.insertOne(application);
-        res
-            .status(201)
-            .send({ message: "Application submitted successfully", result });
-    } catch (error) {
-        res.status(500).send({ message: "Failed to submit application" });
-    }
+
+    const application = req.body;
+    const result = await applicationsCollection.insertOne(application);
+    res.send(result);
+
 }
 export const checkAlreadyApplied = async (req, res) => {
     const { job_id, user_email } = req.query;
@@ -185,19 +305,52 @@ export const checkAlreadyApplied = async (req, res) => {
 }
 
 export const getPostedJobs = async (req, res) => {
-    const companyId = req.params.id;
+    const email = req.query.email;
+
+    const jobs = await jobsCollection
+        .find({ hrEmail: email })
+        .toArray();
+
+    res.send(jobs);
+
+
+
+}
+
+
+export const companiesJobs = async (req, res) => {
+    const { companyId } = req.params;
     try {
         const jobs = await jobsCollection
             .find({ company_id: companyId })
             .toArray();
-
-        if (jobs.length > 0) {
-            res.status(200).json(jobs);
-        } else {
-            res.status(404).json({ message: "No jobs found for this company." });
+        if (!jobs.length) {
+            return res.status(404).send("No jobs found for this company");
         }
+
+        res.json(jobs);
     } catch (error) {
-        res.status(500).json({ message: "Internal Server Error" });
+        console.error("Error fetching jobs by company ID:", error);
+        res.status(500).send("Server Error");
     }
 }
 
+export const singleJob = async (req, res) => {
+    const { id } = req.params;
+
+    if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid Job ID" });
+    }
+
+    try {
+        const result = await jobsCollection.findOne({ _id: new ObjectId(id) });
+
+        if (!result) {
+            return res.status(404).json({ error: "Job not found" });
+        }
+
+        res.json(result);
+    } catch (error) {
+        res.status(500).json({ error: "Server Error" });
+    }
+}

@@ -97,3 +97,33 @@ export const searchCompany = async (req, res) => {
         res.status(500).json({ message: "Server Error" });
     }
 }
+
+
+export const openPosition = async (req, res) => {
+    try {
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 6;
+        const skip = (page - 1) * limit;
+        const company_id = req.query.companyId;
+
+        const query = company_id ? { company_id } : {};
+
+        const jobs = await jobsCollection
+            .find(query)
+            .skip(skip)
+            .limit(limit)
+            .toArray();
+
+        const totalJobs = await jobsCollection.countDocuments(query);
+        const totalPages = Math.ceil(totalJobs / limit);
+
+        if (jobs.length === 0) {
+            return res.status(404).send({ error: "No jobs found" });
+        }
+
+        res.send({ jobs, totalPages });
+    } catch (error) {
+        console.error("Error fetching jobs:", error);
+        res.status(500).send({ error: "Internal server error" });
+    }
+}
