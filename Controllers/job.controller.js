@@ -320,7 +320,7 @@ export const getPostedJobs = async (req, res) => {
 
 export const companiesJobs = async (req, res) => {
     const { email } = req.params;
-    console.log(email);
+    // console.log(email);
     try {
         const jobs = await jobsCollection
             .find({
@@ -336,7 +336,7 @@ export const companiesJobs = async (req, res) => {
 
         res.json(jobs);
     } catch (error) {
-        console.error("Error fetching jobs by company ID:", error);
+        // console.error("Error fetching jobs by company ID:", error);
         res.status(500).send("Server Error");
     }
 }
