@@ -633,9 +633,9 @@ app.get('/individual-messages', async (req, res) => {
     });
 
 
-    app.get("/all_jobs", async (req, res) => {
+    app.get("/all_companies", async (req, res) => {
       try {
-        const cursor = jobsCollection.find({}); 
+        const cursor = companiesCollection.find({}); 
         const result = await cursor.toArray(); 
         res.send(result); 
       } catch (error) {
