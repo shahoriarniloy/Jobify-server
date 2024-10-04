@@ -240,7 +240,7 @@ export const searchLocation = async (req, res) => {
 export const getSpecificJob = async (req, res) => {
     const { id } = req.params;
     try {
-        const job = await jobsCollection.findOne({ _id: id });
+        const job = await jobsCollection.findOne({ _id: new ObjectId(id) });
         if (!job) {
             return res.status(404).send("Job not found");
         }
@@ -319,10 +319,16 @@ export const getPostedJobs = async (req, res) => {
 
 
 export const companiesJobs = async (req, res) => {
-    const { companyId } = req.params;
+    const { email } = req.params;
+    console.log(email);
     try {
         const jobs = await jobsCollection
-            .find({ company_id: companyId })
+            .find({
+                $or: [
+                    { email: email },
+                    { hrEmail: email } 
+                ]
+            })
             .toArray();
         if (!jobs.length) {
             return res.status(404).send("No jobs found for this company");

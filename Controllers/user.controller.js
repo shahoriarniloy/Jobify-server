@@ -26,6 +26,8 @@ export const getUserRole = async (req, res) => {
     }
 }
 
+
+
 // export const getUserBookmark = async (req, res) => {
 //     const email = req.query?.email;
 //     try {
@@ -38,18 +40,21 @@ export const getUserRole = async (req, res) => {
 //     }
 // }
 export const getUserBookmark = async (req, res) => {
-    const email = req.query?.email;
-    const jobId = req.query?.jobid
-    try {
+    console.log('called');
+    const { email } = req.query;
+    console.log('Received email:', email);
+
+      try {
         const bookmarks = await bookmarksCollection
-            .find({ userEmail: email })
-            .toArray();
+          .find({ userEmail: email })
+          .toArray();
 
-
-
-    } catch (error) {
+          console.log(bookmarks);
+        res.json(bookmarks);
+      } catch (error) {
+        console.error("Error fetching bookmarks:", error);
         res.status(500).json({ message: "Server Error" });
-    }
+      }
 }
 
 export const createUserBookmark = async (req, res) => {

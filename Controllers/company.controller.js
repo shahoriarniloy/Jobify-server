@@ -68,10 +68,11 @@ export const getCountingTotalCompanies = async (req, res) => {
 }
 
 export const getSpecificCompany = async (req, res) => {
-    const { id } = req.params;
+    const { email } = req.params;
+    console.log('company email', email);
     try {
         const result = await companiesCollection.findOne({
-            _id: new ObjectId(id),
+            email: email,
         });
         if (!result) {
             return res.status(404).send("Company not found");
@@ -101,29 +102,45 @@ export const searchCompany = async (req, res) => {
 
 export const openPosition = async (req, res) => {
     try {
-        const page = parseInt(req.query.page) || 1;
-        const limit = parseInt(req.query.limit) || 6;
-        const skip = (page - 1) * limit;
-        const company_id = req.query.companyId;
-
-        const query = company_id ? { company_id } : {};
-
-        const jobs = await jobsCollection
-            .find(query)
-            .skip(skip)
-            .limit(limit)
-            .toArray();
-
-        const totalJobs = await jobsCollection.countDocuments(query);
-        const totalPages = Math.ceil(totalJobs / limit);
-
-        if (jobs.length === 0) {
-            return res.status(404).send({ error: "No jobs found" });
-        }
-
-        res.send({ jobs, totalPages });
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 6;
+      const skip = (page - 1) * limit;
+  
+      // Access the email query parameter
+      const company_email = req.query.email;
+      console.log('company:',company_email);
+  
+      // Check if email is being received
+      if (!company_email) {
+        return res.status(400).send({ error: "Email parameter is required" });
+      }
+  
+    //   const query = company_email ? { hrEmail: company_email } : {};
+    const query = company_email ? {
+        $or: [
+            { hrEmail: company_email },
+            { email: company_email }
+        ]
+    } : {};
+    
+  
+      const jobs = await jobsCollection
+        .find(query)
+        .skip(skip)
+        .limit(limit)
+        .toArray();
+  
+      const totalJobs = await jobsCollection.countDocuments(query);
+      const totalPages = Math.ceil(totalJobs / limit);
+  
+      if (jobs.length === 0) {
+        return res.status(404).send({ error: "No jobs found" });
+      }
+  
+      res.send({ jobs, totalPages });
     } catch (error) {
-        console.error("Error fetching jobs:", error);
-        res.status(500).send({ error: "Internal server error" });
+      console.error("Error fetching jobs:", error);
+      res.status(500).send({ error: "Internal server error" });
     }
-}
+  };
+  
