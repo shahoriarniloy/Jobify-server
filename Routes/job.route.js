@@ -12,7 +12,7 @@ jobRouter.get("/jobs-count", getAllJobsCounts);
 jobRouter.get("/jobs", getAllJobs);
 jobRouter.get("/check_application", checkAlreadyApplied);
 jobRouter.get("/company-jobs", getPostedJobs);
-jobRouter.get("/jobs/company/:companyId", companiesJobs);
+jobRouter.get("/jobs/company/:email", companiesJobs);
 jobRouter.get("/single-job/:id", singleJob);
 
 // Post Route

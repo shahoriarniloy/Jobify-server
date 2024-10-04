@@ -8,7 +8,7 @@ companyRouter.get("/companies-posted-job/:id", getCompaniesPostedJob);
 companyRouter.get("/companies/top", getTopCompanies);
 companyRouter.get("/companies", getCompanies);
 companyRouter.get("/companies/count", getCountingTotalCompanies);
-companyRouter.get("/companies/:id", getSpecificCompany);
+companyRouter.get("/companies/:email", getSpecificCompany);
 companyRouter.get("/companies/search", searchCompany);
 companyRouter.get("/OpenPosition", openPosition);
 

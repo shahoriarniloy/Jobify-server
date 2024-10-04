@@ -40,13 +40,16 @@ export const getUserRole = async (req, res) => {
 //     }
 // }
 export const getUserBookmark = async (req, res) => {
-    console.log(called);
-    const { userEmail } = req.params;
+    console.log('called');
+    const { email } = req.query;
+    console.log('Received email:', email);
 
       try {
         const bookmarks = await bookmarksCollection
-          .find({ userEmail })
+          .find({ userEmail: email })
           .toArray();
+
+          console.log(bookmarks);
         res.json(bookmarks);
       } catch (error) {
         console.error("Error fetching bookmarks:", error);
