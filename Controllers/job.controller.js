@@ -334,28 +334,11 @@ export const singleJob = async (req, res) => {
     return res.status(400).json({ error: "Invalid Job ID" });
   }
 
+  try {
+    const result = await jobsCollection.findOne({ _id: new ObjectId(id) });
 
-export const companiesJobs = async (req, res) => {
-    const { email } = req.params;
-    // console.log(email);
-    try {
-        const jobs = await jobsCollection
-            .find({
-                $or: [
-                    { email: email },
-                    { hrEmail: email } 
-                ]
-            })
-            .toArray();
-        if (!jobs.length) {
-            return res.status(404).send("No jobs found for this company");
-        }
-
-        res.json(jobs);
-    } catch (error) {
-        // console.error("Error fetching jobs by company ID:", error);
-        res.status(500).send("Server Error");
-
+    if (!result) {
+      return res.status(404).json({ error: "Job not found" });
     }
 
     res.json(result);
