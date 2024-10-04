@@ -214,24 +214,68 @@ export const userDetails = async (req, res) => {
     }
 }
 
+// export const userConversion = async (req, res) => {
+//     const currentUserEmail = req.query.email;
+//     try {
+//         const messages = await messagesCollection.find({
+//             $or: [
+//                 { senderEmail: currentUserEmail },
+//                 { receiverEmail: currentUserEmail },
+//             ],
+//         }).sort({ createdAt: 1 }).toArray();
+
+//         // console.log('messages:', messages);
+
+//         res.status(200).json(messages);
+//     } catch (error) {
+//         // console.error("Error fetching messages:", error);
+//         res.status(500).json({ message: "Server error" });
+//     }
+// }
+
+
 export const userConversion = async (req, res) => {
     const currentUserEmail = req.query.email;
     try {
-        const messages = await messagesCollection.find({
-            $or: [
-                { senderEmail: currentUserEmail },
-                { receiverEmail: currentUserEmail },
-            ],
-        }).sort({ createdAt: 1 }).toArray();
+        const messages = await messagesCollection.aggregate([
+            {
+                $match: {
+                    $or: [
+                        { senderEmail: currentUserEmail },
+                        { receiverEmail: currentUserEmail },
+                    ],
+                },
+            },
+            {
+                $sort: { createdAt: -1 }, 
+            },
+            {
+                $group: {
+                    _id: {
+                        $cond: {
+                            if: { $eq: ['$senderEmail', currentUserEmail] },
+                            then: '$receiverEmail', 
+                            else: '$senderEmail', 
+                        },
+                    },
+                    latestMessage: { $first: '$$ROOT' }, 
+                },
+            },
+            {
+                $replaceRoot: { newRoot: '$latestMessage' }, 
+            },
+            {
+                $sort: { createdAt: -1 }, 
+            },
+        ]).toArray();
 
-        // console.log('messages:', messages);
 
         res.status(200).json(messages);
     } catch (error) {
-        // console.error("Error fetching messages:", error);
         res.status(500).json({ message: "Server error" });
     }
 }
+
 
 export const individualMessage = async (req, res) => {
     const { email, otherPartyEmail } = req.query;
