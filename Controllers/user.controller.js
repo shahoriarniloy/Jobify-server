@@ -40,19 +40,19 @@ export const getUserRole = async (req, res) => {
 //     }
 // }
 export const getUserBookmark = async (req, res) => {
-    console.log('called');
+    // console.log('called');
     const { email } = req.query;
-    console.log('Received email:', email);
+    // console.log('Received email:', email);
 
       try {
         const bookmarks = await bookmarksCollection
           .find({ userEmail: email })
           .toArray();
 
-          console.log(bookmarks);
+        //   console.log(bookmarks);
         res.json(bookmarks);
       } catch (error) {
-        console.error("Error fetching bookmarks:", error);
+        // console.error("Error fetching bookmarks:", error);
         res.status(500).json({ message: "Server Error" });
       }
 }
@@ -112,11 +112,34 @@ export const postReview = async (req, res) => {
     res.send(result);
 }
 
+// export const getAllReview = async (req, res) => {
+//     const cursor = reviewsCollection.find();
+//     const result = await cursor.toArray();
+//     // console.log(result);
+//     res.send(result);
+// }
+
 export const getAllReview = async (req, res) => {
-    const cursor = reviewsCollection.find();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 3; 
+
+    const skip = (page - 1) * limit;
+
+    const cursor = reviewsCollection.find().sort({ createdAt: -1 }).skip(skip).limit(limit);
     const result = await cursor.toArray();
-    res.send(result);
+    const totalReviews = await reviewsCollection.countDocuments();
+
+    res.send({
+        reviews: result,
+        totalPages: Math.ceil(totalReviews / limit),
+        currentPage: page,
+    });
 }
+
+
+
+
+
 
 export const checkJobAlreadyApplied = async (req, res) => {
     const email = req.query?.email;
@@ -144,7 +167,7 @@ export const sendMessage = async (req, res) => {
         const result = await messagesCollection.insertOne(messageData);
         res.status(201).send(result);
     } catch (error) {
-        console.error("Error sending message:", error);
+        // console.error("Error sending message:", error);
         res.status(500).send({ message: "Internal Server Error" });
     }
 }
@@ -152,8 +175,8 @@ export const sendMessage = async (req, res) => {
 
 export const getMessage = async (req, res) => {
     const { receiverEmail, senderEmail } = req.params;
-    console.log('receiverEmail', receiverEmail);
-    console.log('senderEmail', senderEmail);
+    // console.log('receiverEmail', receiverEmail);
+    // console.log('senderEmail', senderEmail);
 
     try {
         const messages = await messagesCollection.find({
@@ -169,7 +192,7 @@ export const getMessage = async (req, res) => {
             return res.status(404).json({ message: "No messages found." });
         }
     } catch (error) {
-        console.error("Error fetching messages:", error);
+        // console.error("Error fetching messages:", error);
         return res.status(500).json({ message: "Internal Server Error" });
     }
 }
@@ -186,34 +209,78 @@ export const userDetails = async (req, res) => {
 
         res.json(user);
     } catch (error) {
-        console.error('Error fetching user details:', error);
+        // console.error('Error fetching user details:', error);
         res.status(500).json({ message: 'Server error' });
     }
 }
 
+// export const userConversion = async (req, res) => {
+//     const currentUserEmail = req.query.email;
+//     try {
+//         const messages = await messagesCollection.find({
+//             $or: [
+//                 { senderEmail: currentUserEmail },
+//                 { receiverEmail: currentUserEmail },
+//             ],
+//         }).sort({ createdAt: 1 }).toArray();
+
+//         // console.log('messages:', messages);
+
+//         res.status(200).json(messages);
+//     } catch (error) {
+//         // console.error("Error fetching messages:", error);
+//         res.status(500).json({ message: "Server error" });
+//     }
+// }
+
+
 export const userConversion = async (req, res) => {
     const currentUserEmail = req.query.email;
     try {
-        const messages = await messagesCollection.find({
-            $or: [
-                { senderEmail: currentUserEmail },
-                { receiverEmail: currentUserEmail },
-            ],
-        }).sort({ createdAt: 1 }).toArray();
+        const messages = await messagesCollection.aggregate([
+            {
+                $match: {
+                    $or: [
+                        { senderEmail: currentUserEmail },
+                        { receiverEmail: currentUserEmail },
+                    ],
+                },
+            },
+            {
+                $sort: { createdAt: -1 }, 
+            },
+            {
+                $group: {
+                    _id: {
+                        $cond: {
+                            if: { $eq: ['$senderEmail', currentUserEmail] },
+                            then: '$receiverEmail', 
+                            else: '$senderEmail', 
+                        },
+                    },
+                    latestMessage: { $first: '$$ROOT' }, 
+                },
+            },
+            {
+                $replaceRoot: { newRoot: '$latestMessage' }, 
+            },
+            {
+                $sort: { createdAt: -1 }, 
+            },
+        ]).toArray();
 
-        console.log('messages:', messages);
 
         res.status(200).json(messages);
     } catch (error) {
-        console.error("Error fetching messages:", error);
         res.status(500).json({ message: "Server error" });
     }
 }
 
+
 export const individualMessage = async (req, res) => {
     const { email, otherPartyEmail } = req.query;
-    console.log('email', email);
-    console.log('other:', otherPartyEmail);
+    // console.log('email', email);
+    // console.log('other:', otherPartyEmail);
 
     try {
         const messagesAll = await messagesCollection.find({
@@ -227,7 +294,7 @@ export const individualMessage = async (req, res) => {
 
         res.status(200).json(messages);
     } catch (error) {
-        console.error("Error fetching messages:", error);
+        // console.error("Error fetching messages:", error);
         res.status(500).json({ message: "Server error" });
     }
 }

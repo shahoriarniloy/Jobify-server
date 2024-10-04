@@ -9,7 +9,7 @@ export const getCompaniesPostedJob = async (req, res) => {
         const jobs = await jobsCollection
             .find({ company_id: companyId })
             .toArray();
-        console.log(jobs)
+        // console.log(jobs)
         res.send(jobs)
     } catch (error) {
         res.status(500).json({ message: "Internal Server Error" });
@@ -69,7 +69,7 @@ export const getCountingTotalCompanies = async (req, res) => {
 
 export const getSpecificCompany = async (req, res) => {
     const { email } = req.params;
-    console.log('company email', email);
+    // console.log('company email', email);
     try {
         const result = await companiesCollection.findOne({
             email: email,
@@ -108,7 +108,7 @@ export const openPosition = async (req, res) => {
   
       // Access the email query parameter
       const company_email = req.query.email;
-      console.log('company:',company_email);
+    //   console.log('company:',company_email);
   
       // Check if email is being received
       if (!company_email) {
@@ -139,7 +139,7 @@ export const openPosition = async (req, res) => {
   
       res.send({ jobs, totalPages });
     } catch (error) {
-      console.error("Error fetching jobs:", error);
+    //   console.error("Error fetching jobs:", error);
       res.status(500).send({ error: "Internal server error" });
     }
   };
