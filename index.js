@@ -27,6 +27,7 @@ app.use(jobRouter);
 
 async function run() {
   try {
+
     console.log("Successfully connected to MongoDB!");
   } finally {
     app.get("/", (req, res) => {
