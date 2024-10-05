@@ -382,7 +382,6 @@ export const RelatedJobs = async (req, res) => {
 
 export const getAppliedCandidates = async (req, res) => {
   let { job_id } = req.query; 
-  console.log("Received job_id:", job_id);
 
 
   const applications = await applicationsCollection.find({ job_id }).toArray();
