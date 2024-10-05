@@ -1,3 +1,4 @@
+
 import express, { json } from "express";
 import cors from "cors";
 import UserRouter from "./Routes/user.route.js";
@@ -27,6 +28,7 @@ app.use(jobRouter);
 
 async function run() {
   try {
+
     console.log("Successfully connected to MongoDB!");
   } finally {
     app.get("/", (req, res) => {
