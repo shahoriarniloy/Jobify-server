@@ -1,4 +1,6 @@
-import { applicationsCollection, bookmarksCollection, messagesCollection, reviewsCollection, userCollection } from './../Models/database.model.js';
+import { applicationsCollection, bookmarksCollection, messagesCollection, reviewsCollection, userCollection, jobsCollection } from './../Models/database.model.js';
+import { ObjectId } from 'mongodb';
+
 
 
 export const createUser = async (req, res) => {
@@ -157,6 +159,37 @@ export const checkJobAlreadyApplied = async (req, res) => {
 
 
 }
+
+
+export const checkAppliedJobs = async (req, res) => {
+    const email = req.query?.email; 
+
+    const applications = await applicationsCollection.find({ user_email: email }).toArray();
+
+    const appliedJobsWithDetails = [];
+
+    for (const application of applications) {
+        const job = await jobsCollection.findOne({ _id: new ObjectId(application.job_id) }); 
+        if (job) {
+            appliedJobsWithDetails.push({
+                _id: application._id,
+                user_email: application.user_email,
+                status: application.status,
+                job_id: application.job_id,
+                title: job.title, 
+                company: job.company, 
+                salaryRange: job.salaryRange, 
+                location: job.location, 
+            });
+        }
+    }
+
+    res.send(appliedJobsWithDetails); 
+};
+
+
+
+
 
 export const sendMessage = async (req, res) => {
     const messageData = req.body;

@@ -277,10 +277,15 @@ export const getAllJobs = async (req, res) => {
 };
 
 export const applyAJob = async (req, res) => {
-  const application = req.body;
+  const application = { 
+    ...req.body, 
+    status: "pending"  
+  };
+
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
 };
+
 export const checkAlreadyApplied = async (req, res) => {
   const { job_id, user_email } = req.query;
   try {
