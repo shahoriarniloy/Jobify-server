@@ -12,6 +12,7 @@ import {
   RelatedJobs,
   searchLocation,
   singleJob,
+  getAppliedCandidates
 } from "../Controllers/job.controller.js";
 
 const jobRouter = express.Router();
@@ -27,6 +28,7 @@ jobRouter.get("/company-jobs", getPostedJobs);
 jobRouter.get("/jobs/company/:email", companiesJobs);
 jobRouter.get("/single-job/:id", singleJob);
 jobRouter.get("/RelatedJobs", RelatedJobs);
+jobRouter.get("/appliedCandidates", getAppliedCandidates);
 
 // Post Route
 jobRouter.post("/postJob", postAJob);
