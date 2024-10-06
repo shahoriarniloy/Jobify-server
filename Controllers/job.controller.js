@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import {
   applicationsCollection,
   jobsCollection,
+  userCollection,
 } from "../Models/database.model.js";
 
 export const postAJob = async (req, res) => {
@@ -305,6 +306,7 @@ export const checkAlreadyApplied = async (req, res) => {
 };
 
 export const getPostedJobs = async (req, res) => {
+  console.log('called');
   const email = req.query.email;
 
   const jobs = await jobsCollection.find({ hrEmail: email }).toArray();
@@ -331,6 +333,31 @@ export const companiesJobs = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
+
+export const companiesJobApplication = async (req, res) => {
+  const { email } = req.params; 
+  const jobs = await jobsCollection.find({ $or: [{ email }, { hrEmail: email }] }).toArray();
+
+  if (!jobs.length) {
+    return res.status(404).send("No jobs found for this company");
+  }
+
+  const jobIds = jobs.map(job => job._id.toString());
+  const applications = await applicationsCollection.find({ job_id: { $in: jobIds } }).toArray();
+  const applicationCountMap = applications.reduce((acc, application) => {
+    acc[application.job_id] = (acc[application.job_id] || 0) + 1;
+    return acc;
+  }, {});
+
+  const jobsWithApplicationCount = jobs.map(job => ({
+    ...job,
+    applicationsCount: applicationCountMap[job._id.toString()] || 0, 
+  }));
+
+  res.json(jobsWithApplicationCount);
+};
+
+
 
 export const singleJob = async (req, res) => {
   const { id } = req.params;
@@ -392,4 +419,44 @@ export const RelatedJobs = async (req, res) => {
   }
 
   res.send({ jobs, totalPages });
+};
+
+
+export const getAppliedCandidates = async (req, res) => {
+  let { job_id } = req.query; 
+
+
+  const applications = await applicationsCollection.find({ job_id }).toArray();
+  console.log("Applications found:", applications);
+
+  if (applications.length === 0) {
+    return res.status(404).send({ message: 'No applications found for this job_id' });
+  }
+
+  const userEmails = applications.map(app => app.user_email);
+  console.log("User emails collected:", userEmails);
+
+  const users = await userCollection.find({ email: { $in: userEmails } }).toArray();
+  console.log("Users found:", users);
+
+  const response = [];
+  for (let i = 0; i < applications.length; i++) {
+    const application = applications[i];
+
+    const user = users.find(user => user.email === application.user_email);
+    response.push({
+      application: {
+        _id: application._id,
+        user_email: application.user_email,
+      },
+      user: user ? {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        photoURL: user.photoURL, 
+      } : null,
+    });
+  }
+
+  return res.send(response);
 };
