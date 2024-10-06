@@ -13,7 +13,8 @@ import {
   searchLocation,
   singleJob,
   getAppliedCandidates,
-  companiesJobApplication
+  companiesJobApplication,
+  updateCandidateStatus,
 } from "../Controllers/job.controller.js";
 
 const jobRouter = express.Router();
@@ -37,5 +38,7 @@ jobRouter.post("/postJob", postAJob);
 jobRouter.post("/apply_job", applyAJob);
 
 // Update Route
+
+jobRouter.patch("/updateCandidateStatus", updateCandidateStatus);
 
 export default jobRouter;
