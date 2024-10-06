@@ -334,6 +334,31 @@ export const companiesJobs = async (req, res) => {
   }
 };
 
+export const companiesJobApplication = async (req, res) => {
+  const { email } = req.params; 
+  const jobs = await jobsCollection.find({ $or: [{ email }, { hrEmail: email }] }).toArray();
+
+  if (!jobs.length) {
+    return res.status(404).send("No jobs found for this company");
+  }
+
+  const jobIds = jobs.map(job => job._id.toString());
+  const applications = await applicationsCollection.find({ job_id: { $in: jobIds } }).toArray();
+  const applicationCountMap = applications.reduce((acc, application) => {
+    acc[application.job_id] = (acc[application.job_id] || 0) + 1;
+    return acc;
+  }, {});
+
+  const jobsWithApplicationCount = jobs.map(job => ({
+    ...job,
+    applicationsCount: applicationCountMap[job._id.toString()] || 0, 
+  }));
+
+  res.json(jobsWithApplicationCount);
+};
+
+
+
 export const singleJob = async (req, res) => {
   const { id } = req.params;
 
