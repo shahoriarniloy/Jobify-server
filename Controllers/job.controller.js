@@ -238,29 +238,69 @@ export const companiesJobs = async (req, res) => {
 
 export const companiesJobApplication = async (req, res) => {
   const { email } = req.params;
-  const jobs = await jobsCollection
-    .find({ $or: [{ email }, { hrEmail: email }] })
-    .toArray();
 
-  if (!jobs.length) {
-    return res.status(404).send("No jobs found for this company");
+  try {
+    const jobs = await jobsCollection
+      .find({ $or: [{ email }, { hrEmail: email }] })
+      .toArray();
+
+    if (!jobs.length) {
+      return res.status(404).send("No jobs found for this company");
+    }
+
+    const jobIds = jobs.map((job) => job._id.toString());
+
+    // Fetch all applications related to the company's jobs
+    const applications = await applicationsCollection
+      .find({ job_id: { $in: jobIds } })
+      .toArray();
+
+    // Aggregate application statuses
+    const statusCountMap = applications.reduce((acc, application) => {
+      acc[application.status] = (acc[application.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Define all the statuses that we care about
+    const statuses = [
+      "Pending",
+      "Under Review",
+      "Shortlisted",
+      "Interview Scheduled",
+      "Assessment Task",
+      "Rejected",
+      "Hired",
+    ];
+
+    // Ensure every status exists in the map, even if the count is 0
+    statuses.forEach((status) => {
+      if (!statusCountMap[status]) {
+        statusCountMap[status] = 0;
+      }
+    });
+
+    // Add applications count and other status information to each job
+    const jobsWithApplicationCount = jobs.map((job) => ({
+      ...job,
+      applicationsCount: applications.filter(
+        (app) => app.job_id === job._id.toString()
+      ).length,
+      statusCounts: {
+        Pending: statusCountMap["Pending"] || 0,
+        UnderReview: statusCountMap["Under Review"] || 0,
+        Shortlisted: statusCountMap["Shortlisted"] || 0,
+        InterviewScheduled: statusCountMap["Interview Scheduled"] || 0,
+        AssessmentTask: statusCountMap["Assessment Task"] || 0,
+        Rejected: statusCountMap["Rejected"] || 0,
+        Hired: statusCountMap["Hired"] || 0,
+      },
+    }));
+
+    res.json(jobsWithApplicationCount);
+  } catch (error) {
+    console.error("Error fetching company job data:", error);
+    res.status(500).send("Internal server error");
   }
-
-  const jobIds = jobs.map((job) => job._id.toString());
-  const applications = await applicationsCollection
-    .find({ job_id: { $in: jobIds } })
-    .toArray();
-  const applicationCountMap = applications.reduce((acc, application) => {
-    acc[application.job_id] = (acc[application.job_id] || 0) + 1;
-    return acc;
-  }, {});
-
-  const jobsWithApplicationCount = jobs.map((job) => ({
-    ...job,
-    applicationsCount: applicationCountMap[job._id.toString()] || 0,
-  }));
-
-  res.json(jobsWithApplicationCount);
 };
 
 export const singleJob = async (req, res) => {
