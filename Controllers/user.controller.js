@@ -13,17 +13,14 @@ export const createUser = async (req, res) => {
 }
 
 export const getUserRole = async (req, res) => {
-    const email = req.query.email;
-    try {
-        const user = await userCollection.findOne({ email });
+    const email = req.query?.email;
+    
+        const user = await userCollection.findOne({ email:email });
         if (user) {
-            return res.send({ role: user.role, id: user._id });
+            return res.send(user?.role);
         } else {
             return res.status(404).send({ message: "User not found" });
         }
-    } catch (error) {
-        res.status(500).send({ message: "Internal server error" });
-    }
 }
 
 
