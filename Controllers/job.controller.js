@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import {
   applicationsCollection,
   jobsCollection,
+  userCollection,
 } from "../Models/database.model.js";
 
 export const postAJob = async (req, res) => {
@@ -86,123 +87,6 @@ export const advanceSearch = async (req, res) => {
   }
 };
 
-// export const advanceSearch = async (req, res) => {
-//     const page = parseInt(req.query.page) || 0;
-//     const size = parseInt(req.query.size) || 10;
-//     const currentDateString = new Date().toISOString().split("T")[0];
-
-//     // const {
-//     //     searchTerm,
-//     //     location,
-//     //     experience,
-//     //     jobType,
-//     //     education,
-//     //     jobLevel,
-//     //     salaryRange,
-//     // } = req.query?.advanceFilteredData;
-//     console.log(req.query)
-
-//     // Aggregation pipeline array
-//     const pipeline = [];
-
-//     // 1. Deadline Filter
-//     pipeline.push({
-//         $match: { deadline: { $gte: currentDateString } }
-//     });
-
-//     // 2. Search Term Filter
-//     // Check company field with trimmed regex
-//     /**
-//     if (searchTerm) {
-//         pipeline.push({
-//             $match: {
-//                 $or: [
-//                     { title: { $regex: searchTerm.trim(), $options: "i" } },
-//                     { company: { $regex: searchTerm.trim(), $options: "i" } }
-//                 ]
-//             }
-//         });
-//     }
-
-//     // 3. Location Filter
-//     if (location && location.trim()) {
-//         pipeline.push({
-//             $match: {
-//                 location: { $regex: location, $options: "i" }
-//             }
-//         });
-//     }
-
-//     // 4. Experience Filter
-//     if (experience && experience.length > 0) {
-//         const experienceArray = experience.split(",");
-//         pipeline.push({
-//             $match: { experience: { $in: experienceArray } }
-//         });
-//     }
-
-//     // 5. Job Type Filter
-//     if (jobType && jobType.length > 0) {
-//         const jobTypeArray = jobType.split(",");
-//         pipeline.push({
-//             $match: { jobType: { $in: jobTypeArray } }
-//         });
-//     }
-
-//     // 6. Education Filter
-//     if (education && education.length > 0) {
-//         const educationArray = education.split(",");
-//         pipeline.push({
-//             $match: { education: { $in: educationArray } }
-//         });
-//     }
-
-//     // 7. Job Level Filter
-//     if (jobLevel && jobLevel.length > 0) {
-//         const jobLevelArray = jobLevel.split(",");
-//         pipeline.push({
-//             $match: { jobLevel: { $in: jobLevelArray } }
-//         });
-//     }
-
-//     // 8. Salary Range Filter
-//     if (salaryRange && salaryRange.includes("-")) {
-//         const [minSalary, maxSalary] = salaryRange.replace(/\$/g, "").split("-").map(Number);
-//         if (!isNaN(minSalary) && !isNaN(maxSalary)) {
-//             pipeline.push({
-//                 $match: {
-//                     salary: {
-//                         $gte: minSalary,
-//                         $lte: maxSalary
-//                     }
-//                 }
-//             });
-//         }
-//     }
-
-//     pipeline.push({ $skip: page * size });
-//     pipeline.push({ $limit: size });
-
-//     try {
-//         // Calculate total number of matching jobs
-//         const totalJobsPipeline = [...pipeline];
-//         totalJobsPipeline.push({ $count: "totalJobs" });
-//         const totalJobsResult = await jobsCollection.aggregate(totalJobsPipeline).toArray();
-//         const totalJobs = totalJobsResult.length > 0 ? totalJobsResult[0].totalJobs : 0;
-
-//         // Get paginated jobs
-//         const jobs = await jobsCollection.aggregate(pipeline).toArray();
-
-//         // console.log(totalJobsResult,totalJobs,jobs)
-
-//         res.json({ totalJobs, jobs });
-//     } catch (error) {
-//         console.error("Error in advanceSearch:", error);
-//         res.status(500).send("Server Error");
-//     }
-//     */
-// };
-
 export const searchLocation = async (req, res) => {
   const { searchTerm, location } = req.query;
   const currentDateString = new Date().toISOString().split("T")[0];
@@ -277,10 +161,34 @@ export const getAllJobs = async (req, res) => {
 };
 
 export const applyAJob = async (req, res) => {
-  const application = req.body;
+  const application = {
+    ...req.body,
+    status: "Pending",
+  };
+
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
 };
+
+export const updateCandidateStatus = async (req, res) => {
+  const { email, status, applicationId } = req.body;
+
+  if (!email || !status) {
+    return res.send({ message: "Email and status are required." });
+  }
+
+  const result = await applicationsCollection.updateOne(
+    { user_email: email, _id: new ObjectId(applicationId) },
+    { $set: { status: status } }
+  );
+
+  if (result.matchedCount === 0) {
+    return res.send({ message: "Candidate not found." });
+  }
+
+  res.send({ message: "Status updated successfully." });
+};
+
 export const checkAlreadyApplied = async (req, res) => {
   const { job_id, user_email } = req.query;
   try {
@@ -300,6 +208,7 @@ export const checkAlreadyApplied = async (req, res) => {
 };
 
 export const getPostedJobs = async (req, res) => {
+  console.log("called");
   const email = req.query.email;
 
   const jobs = await jobsCollection.find({ hrEmail: email }).toArray();
@@ -324,6 +233,73 @@ export const companiesJobs = async (req, res) => {
   } catch (error) {
     console.error("Error fetching jobs by company ID:", error);
     res.status(500).send("Server Error");
+  }
+};
+
+export const companiesJobApplication = async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    const jobs = await jobsCollection
+      .find({ $or: [{ email }, { hrEmail: email }] })
+      .toArray();
+
+    if (!jobs.length) {
+      return res.status(404).send("No jobs found for this company");
+    }
+
+    const jobIds = jobs.map((job) => job._id.toString());
+
+    // Fetch all applications related to the company's jobs
+    const applications = await applicationsCollection
+      .find({ job_id: { $in: jobIds } })
+      .toArray();
+
+    // Aggregate application statuses
+    const statusCountMap = applications.reduce((acc, application) => {
+      acc[application.status] = (acc[application.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    // Define all the statuses that we care about
+    const statuses = [
+      "Pending",
+      "Under Review",
+      "Shortlisted",
+      "Interview Scheduled",
+      "Assessment Task",
+      "Rejected",
+      "Hired",
+    ];
+
+    // Ensure every status exists in the map, even if the count is 0
+    statuses.forEach((status) => {
+      if (!statusCountMap[status]) {
+        statusCountMap[status] = 0;
+      }
+    });
+
+    // Add applications count and other status information to each job
+    const jobsWithApplicationCount = jobs.map((job) => ({
+      ...job,
+      applicationsCount: applications.filter(
+        (app) => app.job_id === job._id.toString()
+      ).length,
+      statusCounts: {
+        Pending: statusCountMap["Pending"] || 0,
+        UnderReview: statusCountMap["Under Review"] || 0,
+        Shortlisted: statusCountMap["Shortlisted"] || 0,
+        InterviewScheduled: statusCountMap["Interview Scheduled"] || 0,
+        AssessmentTask: statusCountMap["Assessment Task"] || 0,
+        Rejected: statusCountMap["Rejected"] || 0,
+        Hired: statusCountMap["Hired"] || 0,
+      },
+    }));
+
+    res.json(jobsWithApplicationCount);
+  } catch (error) {
+    console.error("Error fetching company job data:", error);
+    res.status(500).send("Internal server error");
   }
 };
 
@@ -370,4 +346,49 @@ export const RelatedJobs = async (req, res) => {
   }
 
   res.send({ jobs, totalPages });
+};
+
+export const getAppliedCandidates = async (req, res) => {
+  let { job_id } = req.query;
+
+  const applications = await applicationsCollection.find({ job_id }).toArray();
+  console.log("Applications found:", applications);
+
+  if (applications.length === 0) {
+    return res
+      .status(404)
+      .send({ message: "No applications found for this job_id" });
+  }
+
+  const userEmails = applications.map((app) => app.user_email);
+  console.log("User emails collected:", userEmails);
+
+  const users = await userCollection
+    .find({ email: { $in: userEmails } })
+    .toArray();
+  console.log("Users found:", users);
+
+  const response = [];
+  for (let i = 0; i < applications.length; i++) {
+    const application = applications[i];
+
+    const user = users.find((user) => user.email === application.user_email);
+    response.push({
+      application: {
+        _id: application._id,
+        user_email: application.user_email,
+        status: application.status,
+      },
+      user: user
+        ? {
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            photoURL: user.photoURL,
+          }
+        : null,
+    });
+  }
+
+  return res.send(response);
 };
