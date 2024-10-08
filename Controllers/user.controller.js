@@ -167,8 +167,6 @@ export const postUnlike = async (req, res) => {
     return res.status(404).json({ message: "Post not found." });
   }
 
-  console.log("User Email:", userEmail);
-
   const index = post.likes.indexOf(userEmail);
   if (index !== -1) {
     post.likes.splice(index, 1);
