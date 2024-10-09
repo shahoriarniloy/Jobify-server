@@ -6,6 +6,8 @@ import {
   userCollection,
   jobsCollection,
   postsCollection,
+  followingsCollection,
+  companiesCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
 
@@ -21,17 +23,98 @@ export const createUser = async (req, res) => {
 };
 
 export const getUserRole = async (req, res) => {
-    const email = req.query?.email;
-    
-        const user = await userCollection.findOne({ email:email });
-        if (user) {
-            return res.send(user?.role);
-        } else {
-            return res.status(404).send({ message: "User not found" });
-        }
-}
+  const email = req.query?.email;
 
+  const user = await userCollection.findOne({ email: email });
+  if (user) {
+    return res.send(user?.role);
+  } else {
+    return res.status(404).send({ message: "User not found" });
+  }
+};
 
+export const searchJobSeekers = async (req, res) => {
+  const { searchTerm } = req.query;
+
+  let query = { role: "Job Seeker" };
+  if (searchTerm) {
+    query = {
+      ...query,
+      name: { $regex: searchTerm, $options: "i" },
+    };
+  }
+  const jobSeekers = await userCollection.find(query).toArray();
+  res.json(jobSeekers);
+};
+
+export const followJobSeeker = async (req, res) => {
+  console.log("called");
+  const { followerEmail, followedEmail } = req.body;
+  console.log(followerEmail);
+  console.log(followerEmail);
+
+  const existingFollow = await followingsCollection.findOne({
+    follower: followerEmail,
+    followed: followedEmail,
+  });
+
+  if (existingFollow) {
+    return res.status(400).json({ message: "Already following this user." });
+  }
+
+  const followData = {
+    follower: followerEmail,
+    followed: followedEmail,
+    followedAt: new Date(),
+  };
+
+  await followingsCollection.insertOne(followData);
+  res.status(200).json({ message: "Followed successfully!" });
+};
+
+export const unfollowJobSeeker = async (req, res) => {
+  const { followerEmail, followedEmail } = req.body;
+
+  const existingFollow = await followingsCollection.findOneAndDelete({
+    follower: followerEmail,
+    followed: followedEmail,
+  });
+
+  if (!existingFollow) {
+    return res
+      .status(400)
+      .json({ message: "You are not following this user." });
+  }
+
+  res.status(200).json({ message: "Unfollowed successfully!" });
+};
+
+export const checkFollowStatus = async (req, res) => {
+  try {
+    const { followerEmail, followedEmail } = req.query;
+
+    console.log("Follower Email:", followerEmail);
+    console.log("Followed Email:", followedEmail);
+
+    if (!followerEmail || !followedEmail) {
+      return res.status(400).json({
+        message: "Both followerEmail and followedEmail are required.",
+      });
+    }
+
+    const existingFollow = await followingsCollection.findOne({
+      follower: followerEmail,
+      followed: followedEmail,
+    });
+
+    console.log("Existing Follow:", existingFollow);
+
+    res.status(200).json({ hasFollowed: !!existingFollow });
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
 
 // export const getUserBookmark = async (req, res) => {
 //     const email = req.query?.email;
@@ -209,11 +292,34 @@ export const postComment = async (req, res) => {
   res.status(201).json({ message: "Comment added", post });
 };
 
+// export const getPosts = async (req, res) => {
+//   try {
+//     const posts = await postsCollection
+//       .find({})
+//       .sort({ createdAt: -1 })
+//       .toArray();
+
+//     res.status(200).json(posts);
+//   } catch (error) {
+//     console.error("Error fetching posts:", error);
+//     res.status(500).json({ message: "Error fetching posts" });
+//   }
+// };
+
 export const getPosts = async (req, res) => {
+  const { currentUserEmail } = req.query;
+
   try {
+    const followings = await followingsCollection
+      .find({ follower: currentUserEmail })
+      .toArray();
+
+    const followedEmails = followings.map((follow) => follow.followed);
+
     const posts = await postsCollection
-      .find({})
+      .find({ userEmail: { $in: followedEmails } })
       .sort({ createdAt: -1 })
+      .limit(50)
       .toArray();
 
     res.status(200).json(posts);
@@ -308,15 +414,48 @@ export const checkAppliedJobs = async (req, res) => {
   res.send(appliedJobsWithDetails);
 };
 
+// export const sendMessage = async (req, res) => {
+//   const messageData = req.body;
+
+//   messageData.createdAt = new Date().toISOString();
+
+//   try {
+//     const result = await messagesCollection.insertOne(messageData);
+//     res.status(201).send(result);
+//   } catch (error) {
+//     res.status(500).send({ message: "Internal Server Error" });
+//   }
+// };
+
 export const sendMessage = async (req, res) => {
+  console.log("called msg send");
   const messageData = req.body;
 
   messageData.createdAt = new Date().toISOString();
 
   try {
+    const user = await userCollection.findOne({
+      email: messageData.receiverEmail,
+    });
+
+    const company = await companiesCollection.findOne({
+      email: messageData.receiverEmail,
+    });
+
+    if (user) {
+      messageData.receiverName = user.name;
+      messageData.receiverPhoto = user.photoURL;
+    } else if (company) {
+      messageData.receiverName = company.company_name;
+      messageData.receiverPhoto = company.company_logo;
+    } else {
+      return res.status(404).send({ message: "Receiver not found." });
+    }
+
     const result = await messagesCollection.insertOne(messageData);
     res.status(201).send(result);
   } catch (error) {
+    console.error("Error sending message:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
 };

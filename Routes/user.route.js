@@ -2,6 +2,7 @@ import express from "express";
 import {
   checkJobAlreadyApplied,
   checkAppliedJobs,
+  searchJobSeekers,
   createUser,
   createUserBookmark,
   deleteUserBookmark,
@@ -20,11 +21,16 @@ import {
   postComment,
   getPost,
   postUnlike,
+  followJobSeeker,
+  unfollowJobSeeker,
+  checkFollowStatus,
 } from "../Controllers/user.controller.js";
 const userRouter = express.Router();
 
 // Get route
 userRouter.get("/user-role", getUserRole);
+userRouter.get("/job-seekers", searchJobSeekers);
+userRouter.get("/check-follow-status", checkFollowStatus);
 userRouter.get("/bookmarks", getUserBookmark);
 userRouter.get("/reviews", getAllReview);
 userRouter.get("/check-already-applied", checkJobAlreadyApplied);
@@ -42,8 +48,11 @@ userRouter.post("/bookmarks", createUserBookmark);
 userRouter.post("/reviews", postReview);
 userRouter.post("/sendMessage", sendMessage);
 userRouter.post("/postStatus", postStatus);
+userRouter.post("/follow-job-seeker", followJobSeeker);
 
 // Delete Route
+userRouter.delete("/unfollow-job-seeker", unfollowJobSeeker);
+
 userRouter.delete("/bookmarks/:email/:jobId", deleteUserBookmark);
 
 // Put Route

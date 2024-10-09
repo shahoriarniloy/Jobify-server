@@ -23,3 +23,4 @@ export const applicationsCollection = database.collection("applications");
 export const conversationsCollection = database.collection("conversations");
 export const messagesCollection = database.collection("messages");
 export const postsCollection = database.collection("posts");
+export const followingsCollection = database.collection("following");
