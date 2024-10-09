@@ -23,17 +23,15 @@ export const createUser = async (req, res) => {
 };
 
 export const getUserRole = async (req, res) => {
-    const email = req.query?.email;
-    
-        const user = await userCollection.findOne({ email:email });
-        if (user) {
-            return res.send(user?.role);
-        } else {
-            return res.status(404).send({ message: "User not found" });
-        }
-}
+  const email = req.query?.email;
 
-
+  const user = await userCollection.findOne({ email: email });
+  if (user) {
+    return res.send(user?.role);
+  } else {
+    return res.status(404).send({ message: "User not found" });
+  }
+};
 
 export const searchJobSeekers = async (req, res) => {
   const { searchTerm } = req.query;
@@ -407,16 +405,24 @@ export const checkAppliedJobs = async (req, res) => {
 // };
 
 export const sendMessage = async (req, res) => {
+  console.log("called msg send");
   const messageData = req.body;
 
   messageData.createdAt = new Date().toISOString();
 
   try {
+    const user = await userCollection.findOne({
+      email: messageData.receiverEmail,
+    });
+
     const company = await companiesCollection.findOne({
       email: messageData.receiverEmail,
     });
 
-    if (company) {
+    if (user) {
+      messageData.receiverName = user.name;
+      messageData.receiverPhoto = user.photoURL;
+    } else if (company) {
       messageData.receiverName = company.company_name;
       messageData.receiverPhoto = company.company_logo;
     } else {
