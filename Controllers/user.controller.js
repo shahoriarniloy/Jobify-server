@@ -23,16 +23,13 @@ export const createUser = async (req, res) => {
 };
 
 export const getUserRole = async (req, res) => {
-  const email = req.query.email;
-  try {
-    const user = await userCollection.findOne({ email });
-    if (user) {
-      return res.send({ role: user.role, id: user._id });
-    } else {
-      return res.status(404).send({ message: "User not found" });
-    }
-  } catch (error) {
-    res.status(500).send({ message: "Internal server error" });
+  const email = req.query?.email;
+
+  const user = await userCollection.findOne({ email: email });
+  if (user) {
+    return res.send(user?.role);
+  } else {
+    return res.status(404).send({ message: "User not found" });
   }
 };
 
@@ -253,8 +250,6 @@ export const postUnlike = async (req, res) => {
     return res.status(404).json({ message: "Post not found." });
   }
 
-  console.log("User Email:", userEmail);
-
   const index = post.likes.indexOf(userEmail);
   if (index !== -1) {
     post.likes.splice(index, 1);
@@ -297,11 +292,34 @@ export const postComment = async (req, res) => {
   res.status(201).json({ message: "Comment added", post });
 };
 
+// export const getPosts = async (req, res) => {
+//   try {
+//     const posts = await postsCollection
+//       .find({})
+//       .sort({ createdAt: -1 })
+//       .toArray();
+
+//     res.status(200).json(posts);
+//   } catch (error) {
+//     console.error("Error fetching posts:", error);
+//     res.status(500).json({ message: "Error fetching posts" });
+//   }
+// };
+
 export const getPosts = async (req, res) => {
+  const { currentUserEmail } = req.query;
+
   try {
+    const followings = await followingsCollection
+      .find({ follower: currentUserEmail })
+      .toArray();
+
+    const followedEmails = followings.map((follow) => follow.followed);
+
     const posts = await postsCollection
-      .find({})
+      .find({ userEmail: { $in: followedEmails } })
       .sort({ createdAt: -1 })
+      .limit(50)
       .toArray();
 
     res.status(200).json(posts);
@@ -410,16 +428,24 @@ export const checkAppliedJobs = async (req, res) => {
 // };
 
 export const sendMessage = async (req, res) => {
+  console.log("called msg send");
   const messageData = req.body;
 
   messageData.createdAt = new Date().toISOString();
 
   try {
+    const user = await userCollection.findOne({
+      email: messageData.receiverEmail,
+    });
+
     const company = await companiesCollection.findOne({
       email: messageData.receiverEmail,
     });
 
-    if (company) {
+    if (user) {
+      messageData.receiverName = user.name;
+      messageData.receiverPhoto = user.photoURL;
+    } else if (company) {
       messageData.receiverName = company.company_name;
       messageData.receiverPhoto = company.company_logo;
     } else {
