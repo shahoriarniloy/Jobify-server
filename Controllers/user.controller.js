@@ -292,11 +292,34 @@ export const postComment = async (req, res) => {
   res.status(201).json({ message: "Comment added", post });
 };
 
+// export const getPosts = async (req, res) => {
+//   try {
+//     const posts = await postsCollection
+//       .find({})
+//       .sort({ createdAt: -1 })
+//       .toArray();
+
+//     res.status(200).json(posts);
+//   } catch (error) {
+//     console.error("Error fetching posts:", error);
+//     res.status(500).json({ message: "Error fetching posts" });
+//   }
+// };
+
 export const getPosts = async (req, res) => {
+  const { currentUserEmail } = req.query;
+
   try {
+    const followings = await followingsCollection
+      .find({ follower: currentUserEmail })
+      .toArray();
+
+    const followedEmails = followings.map((follow) => follow.followed);
+
     const posts = await postsCollection
-      .find({})
+      .find({ userEmail: { $in: followedEmails } })
       .sort({ createdAt: -1 })
+      .limit(50)
       .toArray();
 
     res.status(200).json(posts);
