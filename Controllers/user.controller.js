@@ -6,6 +6,7 @@ import {
   userCollection,
   jobsCollection,
   postsCollection,
+  followingsCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
 
@@ -31,6 +32,89 @@ export const getUserRole = async (req, res) => {
     }
   } catch (error) {
     res.status(500).send({ message: "Internal server error" });
+  }
+};
+
+export const searchJobSeekers = async (req, res) => {
+  const { searchTerm } = req.query;
+
+  let query = { role: "Job Seeker" };
+  if (searchTerm) {
+    query = {
+      ...query,
+      name: { $regex: searchTerm, $options: "i" },
+    };
+  }
+  const jobSeekers = await userCollection.find(query).toArray();
+  res.json(jobSeekers);
+};
+
+export const followJobSeeker = async (req, res) => {
+  console.log("called");
+  const { followerEmail, followedEmail } = req.body;
+  console.log(followerEmail);
+  console.log(followerEmail);
+
+  const existingFollow = await followingsCollection.findOne({
+    follower: followerEmail,
+    followed: followedEmail,
+  });
+
+  if (existingFollow) {
+    return res.status(400).json({ message: "Already following this user." });
+  }
+
+  const followData = {
+    follower: followerEmail,
+    followed: followedEmail,
+    followedAt: new Date(),
+  };
+
+  await followingsCollection.insertOne(followData);
+  res.status(200).json({ message: "Followed successfully!" });
+};
+
+export const unfollowJobSeeker = async (req, res) => {
+  const { followerEmail, followedEmail } = req.body;
+
+  const existingFollow = await followingsCollection.findOneAndDelete({
+    follower: followerEmail,
+    followed: followedEmail,
+  });
+
+  if (!existingFollow) {
+    return res
+      .status(400)
+      .json({ message: "You are not following this user." });
+  }
+
+  res.status(200).json({ message: "Unfollowed successfully!" });
+};
+
+export const checkFollowStatus = async (req, res) => {
+  try {
+    const { followerEmail, followedEmail } = req.query;
+
+    console.log("Follower Email:", followerEmail);
+    console.log("Followed Email:", followedEmail);
+
+    if (!followerEmail || !followedEmail) {
+      return res.status(400).json({
+        message: "Both followerEmail and followedEmail are required.",
+      });
+    }
+
+    const existingFollow = await followingsCollection.findOne({
+      follower: followerEmail,
+      followed: followedEmail,
+    });
+
+    console.log("Existing Follow:", existingFollow);
+
+    res.status(200).json({ hasFollowed: !!existingFollow });
+  } catch (error) {
+    console.error("Error checking follow status:", error);
+    res.status(500).json({ message: "Internal server error." });
   }
 };
 
