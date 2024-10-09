@@ -7,6 +7,7 @@ import {
   jobsCollection,
   postsCollection,
   followingsCollection,
+  companiesCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
 
@@ -395,15 +396,40 @@ export const checkAppliedJobs = async (req, res) => {
   res.send(appliedJobsWithDetails);
 };
 
+// export const sendMessage = async (req, res) => {
+//   const messageData = req.body;
+
+//   messageData.createdAt = new Date().toISOString();
+
+//   try {
+//     const result = await messagesCollection.insertOne(messageData);
+//     res.status(201).send(result);
+//   } catch (error) {
+//     res.status(500).send({ message: "Internal Server Error" });
+//   }
+// };
+
 export const sendMessage = async (req, res) => {
   const messageData = req.body;
 
   messageData.createdAt = new Date().toISOString();
 
   try {
+    const company = await companiesCollection.findOne({
+      email: messageData.receiverEmail,
+    });
+
+    if (company) {
+      messageData.receiverName = company.company_name;
+      messageData.receiverPhoto = company.company_logo;
+    } else {
+      return res.status(404).send({ message: "Receiver not found." });
+    }
+
     const result = await messagesCollection.insertOne(messageData);
     res.status(201).send(result);
   } catch (error) {
+    console.error("Error sending message:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
 };
