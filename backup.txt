@@ -581,3 +581,49 @@ const jobPromises = bookmarks.map(async (bm) => {
                         job.hasApplied = appliedResponse.data.applied;  // Adding applied status to the job object
                         return job;
                     });
+
+
+
+                    {
+                      _id
+66e9b2cdd3a959b9442eed96
+company_name
+"TechWorld Solutions"
+company_logo
+"https://i.ibb.co.com/rsfKL6g/man-playing-virtual-reality-map.jpg""
+company_website
+"https://techworld.com"
+company_type
+"Private"
+industry
+"Information Technology"
+founded_date
+2010
+company_size
+500
+company_description
+"TechWorld Solutions is a leading provider of cutting-edge software sol…"
+address
+"123 Innovation Drive"
+city
+"San Francisco"
+state
+"California"
+country
+"USA"
+phone_number
+"+1 415-555-0123"
+email
+"info@
+                    }
+
+
+
+                    company_name
+                    email
+                    password
+                    founded_date
+                    company_type
+                    industry
+                    country
+                    phone_number

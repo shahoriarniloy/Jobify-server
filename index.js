@@ -4,9 +4,9 @@ import cors from "cors";
 import UserRouter from "./Routes/user.route.js";
 import companyRoute from "./Routes/company.route.js";
 import jobRouter from "./Routes/job.route.js";
-
 const app = express();
 const port = process.env.PORT || 5000;
+
 app.use(
   cors({
     origin: [
@@ -19,7 +19,6 @@ app.use(
     credentials: true,
   })
 );
-
 app.use(json());
 app.use(UserRouter);
 app.use(companyRoute);
@@ -28,7 +27,6 @@ app.use(jobRouter);
 
 async function run() {
   try {
-
     console.log("Successfully connected to MongoDB!");
   } finally {
     app.get("/", (req, res) => {

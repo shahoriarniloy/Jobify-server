@@ -21,18 +21,17 @@ export const createUser = async (req, res) => {
 };
 
 export const getUserRole = async (req, res) => {
-  const email = req.query.email;
-  try {
-    const user = await userCollection.findOne({ email });
-    if (user) {
-      return res.send({ role: user.role, id: user._id });
-    } else {
-      return res.status(404).send({ message: "User not found" });
-    }
-  } catch (error) {
-    res.status(500).send({ message: "Internal server error" });
-  }
-};
+    const email = req.query?.email;
+    
+        const user = await userCollection.findOne({ email:email });
+        if (user) {
+            return res.send(user?.role);
+        } else {
+            return res.status(404).send({ message: "User not found" });
+        }
+}
+
+
 
 // export const getUserBookmark = async (req, res) => {
 //     const email = req.query?.email;
@@ -167,8 +166,6 @@ export const postUnlike = async (req, res) => {
   if (!post) {
     return res.status(404).json({ message: "Post not found." });
   }
-
-  console.log("User Email:", userEmail);
 
   const index = post.likes.indexOf(userEmail);
   if (index !== -1) {
