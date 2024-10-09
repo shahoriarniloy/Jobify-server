@@ -48,10 +48,8 @@ export const searchJobSeekers = async (req, res) => {
 };
 
 export const followJobSeeker = async (req, res) => {
-  console.log("called");
+  // console.log("called");
   const { followerEmail, followedEmail } = req.body;
-  console.log(followerEmail);
-  console.log(followerEmail);
 
   const existingFollow = await followingsCollection.findOne({
     follower: followerEmail,
@@ -93,9 +91,6 @@ export const checkFollowStatus = async (req, res) => {
   try {
     const { followerEmail, followedEmail } = req.query;
 
-    console.log("Follower Email:", followerEmail);
-    console.log("Followed Email:", followedEmail);
-
     if (!followerEmail || !followedEmail) {
       return res.status(400).json({
         message: "Both followerEmail and followedEmail are required.",
@@ -107,11 +102,11 @@ export const checkFollowStatus = async (req, res) => {
       followed: followedEmail,
     });
 
-    console.log("Existing Follow:", existingFollow);
+    // console.log("Existing Follow:", existingFollow);
 
     res.status(200).json({ hasFollowed: !!existingFollow });
   } catch (error) {
-    console.error("Error checking follow status:", error);
+    // console.error("Error checking follow status:", error);
     res.status(500).json({ message: "Internal server error." });
   }
 };
@@ -324,7 +319,7 @@ export const getPosts = async (req, res) => {
 
     res.status(200).json(posts);
   } catch (error) {
-    console.error("Error fetching posts:", error);
+    // console.error("Error fetching posts:", error);
     res.status(500).json({ message: "Error fetching posts" });
   }
 };
@@ -428,7 +423,6 @@ export const checkAppliedJobs = async (req, res) => {
 // };
 
 export const sendMessage = async (req, res) => {
-  console.log("called msg send");
   const messageData = req.body;
 
   messageData.createdAt = new Date().toISOString();
@@ -455,7 +449,6 @@ export const sendMessage = async (req, res) => {
     const result = await messagesCollection.insertOne(messageData);
     res.status(201).send(result);
   } catch (error) {
-    console.error("Error sending message:", error);
     res.status(500).send({ message: "Internal Server Error" });
   }
 };

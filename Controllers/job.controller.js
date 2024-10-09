@@ -208,7 +208,6 @@ export const checkAlreadyApplied = async (req, res) => {
 };
 
 export const getPostedJobs = async (req, res) => {
-  console.log("called");
   const email = req.query.email;
 
   const jobs = await jobsCollection.find({ hrEmail: email }).toArray();
@@ -218,7 +217,7 @@ export const getPostedJobs = async (req, res) => {
 
 export const companiesJobs = async (req, res) => {
   const { email } = req.params;
-  console.log(email);
+  // console.log(email);
   try {
     const jobs = await jobsCollection
       .find({
@@ -231,7 +230,7 @@ export const companiesJobs = async (req, res) => {
 
     res.json(jobs);
   } catch (error) {
-    console.error("Error fetching jobs by company ID:", error);
+    // console.error("Error fetching jobs by company ID:", error);
     res.status(500).send("Server Error");
   }
 };
@@ -298,7 +297,7 @@ export const companiesJobApplication = async (req, res) => {
 
     res.json(jobsWithApplicationCount);
   } catch (error) {
-    console.error("Error fetching company job data:", error);
+    // console.error("Error fetching company job data:", error);
     res.status(500).send("Internal server error");
   }
 };
@@ -352,7 +351,7 @@ export const getAppliedCandidates = async (req, res) => {
   let { job_id } = req.query;
 
   const applications = await applicationsCollection.find({ job_id }).toArray();
-  console.log("Applications found:", applications);
+  // console.log("Applications found:", applications);
 
   if (applications.length === 0) {
     return res
@@ -361,12 +360,12 @@ export const getAppliedCandidates = async (req, res) => {
   }
 
   const userEmails = applications.map((app) => app.user_email);
-  console.log("User emails collected:", userEmails);
+  // console.log("User emails collected:", userEmails);
 
   const users = await userCollection
     .find({ email: { $in: userEmails } })
     .toArray();
-  console.log("Users found:", users);
+  // console.log("Users found:", users);
 
   const response = [];
   for (let i = 0; i < applications.length; i++) {
