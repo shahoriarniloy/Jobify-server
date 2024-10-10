@@ -1,9 +1,9 @@
-
 import express, { json } from "express";
 import cors from "cors";
 import UserRouter from "./Routes/user.route.js";
 import companyRoute from "./Routes/company.route.js";
 import jobRouter from "./Routes/job.route.js";
+import adminRouter from "./Routes/admin.route.js";
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -23,7 +23,7 @@ app.use(json());
 app.use(UserRouter);
 app.use(companyRoute);
 app.use(jobRouter);
-
+app.use(adminRouter);
 
 async function run() {
   try {
