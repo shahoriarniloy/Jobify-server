@@ -287,20 +287,6 @@ export const postComment = async (req, res) => {
   res.status(201).json({ message: "Comment added", post });
 };
 
-// export const getPosts = async (req, res) => {
-//   try {
-//     const posts = await postsCollection
-//       .find({})
-//       .sort({ createdAt: -1 })
-//       .toArray();
-
-//     res.status(200).json(posts);
-//   } catch (error) {
-//     console.error("Error fetching posts:", error);
-//     res.status(500).json({ message: "Error fetching posts" });
-//   }
-// };
-
 export const getPosts = async (req, res) => {
   const { currentUserEmail } = req.query;
 
@@ -335,13 +321,6 @@ export const getPost = async (req, res) => {
 
   res.status(200).json(post);
 };
-
-// export const getAllReview = async (req, res) => {
-//     const cursor = reviewsCollection.find();
-//     const result = await cursor.toArray();
-//     // console.log(result);
-//     res.send(result);
-// }
 
 export const getAllReview = async (req, res) => {
   const page = parseInt(req.query.page) || 1;
@@ -408,19 +387,6 @@ export const checkAppliedJobs = async (req, res) => {
 
   res.send(appliedJobsWithDetails);
 };
-
-// export const sendMessage = async (req, res) => {
-//   const messageData = req.body;
-
-//   messageData.createdAt = new Date().toISOString();
-
-//   try {
-//     const result = await messagesCollection.insertOne(messageData);
-//     res.status(201).send(result);
-//   } catch (error) {
-//     res.status(500).send({ message: "Internal Server Error" });
-//   }
-// };
 
 export const sendMessage = async (req, res) => {
   const messageData = req.body;
@@ -493,24 +459,6 @@ export const userDetails = async (req, res) => {
   }
 };
 
-// export const userConversion = async (req, res) => {
-//     const currentUserEmail = req.query.email;
-//     try {
-//         const messages = await messagesCollection.find({
-//             $or: [
-//                 { senderEmail: currentUserEmail },
-//                 { receiverEmail: currentUserEmail },
-//             ],
-//         }).sort({ createdAt: 1 }).toArray();
-
-//         // console.log('messages:', messages);
-
-//         res.status(200).json(messages);
-//     } catch (error) {
-//         // console.error("Error fetching messages:", error);
-//         res.status(500).json({ message: "Server error" });
-//     }
-// }
 
 export const userConversion = async (req, res) => {
   const currentUserEmail = req.query.email;
@@ -573,5 +521,33 @@ export const individualMessage = async (req, res) => {
     res.status(200).json(messages);
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+
+export const postProfileSettings = async (req, res) => {
+  try {
+    const { userEmail, schoolName, degree, field, startDate, endDate, cgpa, description } = req.body;
+    const query = { email: userEmail };
+
+    const educationData = {
+      schoolName,
+      degree,
+      field,
+      startDate,
+      endDate,
+      cgpa,
+      description
+    };
+    const update = { $push: { education: educationData } };
+    const result = await userCollection.updateOne(query, update);
+
+    if (result.modifiedCount === 1) {
+      res.status(200).json({ message: 'Education data added successfully' });
+    } else {
+      res.status(400).json({ message: 'Profile not found or no changes made' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: 'Internal server error' });
   }
 };
