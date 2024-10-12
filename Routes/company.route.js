@@ -1,5 +1,17 @@
-import express from 'express';
-import { getCompanies, getCountingTotalCompanies, getCompaniesPostedJob, getTopCompanies, getSpecificCompany, searchCompany, openPosition } from '../Controllers/company.controller.js';
+import express from "express";
+import {
+  getCompanies,
+  getCountingTotalCompanies,
+  getCompaniesPostedJob,
+  getTopCompanies,
+  getSpecificCompany,
+  searchCompany,
+  openPosition,
+  companyInfo,
+  companyFoundingInfo,
+  companySocialInfo,
+  companyAccountInfo,
+} from "../Controllers/company.controller.js";
 
 const companyRouter = express.Router();
 
@@ -13,14 +25,13 @@ companyRouter.get("/companies/search", searchCompany);
 companyRouter.get("/OpenPosition", openPosition);
 
 // Post Route
-
+companyRouter.post("/companyInfo", companyInfo);
+companyRouter.post("/companyFoundingInfo", companyFoundingInfo);
+companyRouter.post("/companySocialInfo", companySocialInfo);
+companyRouter.post("/companyAccountInfo", companyAccountInfo);
 
 // Delete Route
 
-
-
 // Update Route
-
-
 
 export default companyRouter;
