@@ -55,8 +55,8 @@ userRouter.post("/reviews", postReview);
 userRouter.post("/sendMessage", sendMessage);
 userRouter.post("/postStatus", postStatus);
 userRouter.post("/follow-job-seeker", followJobSeeker);
-userRouter.post("/profile-updating", postProfileSettings);
 userRouter.post("/userInfo-updating", postUserInfo);
+userRouter.post("/profile-updating", postProfileSettings);
 
 // Delete Route
 userRouter.delete("/unfollow-job-seeker", unfollowJobSeeker);

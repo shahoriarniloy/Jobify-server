@@ -560,28 +560,46 @@ export const postProfileSettings = async (req, res) => {
 };
 
 export const postUserInfo = async (req, res) => {
-  const { about, phone, photoUrl } = req.body;
-  const userEmail = req.body.email;
+  try {
+    console.log(req.body);
+    const { about, phone, photoUrl, email, socialLinks } = req.body;
 
-  const query = { email: userEmail };
-  const update = {
-    $set: {
-      photoURL: photoUrl, // Update photoURL field
-    },
-    $push: {
-      userInfo: {
-        about,
-        phone,
-      },
-    },
-  };
+    // Check if email is provided
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
 
-  const result = await userCollection.updateOne(query, update);
+    // Construct the update object dynamically
+    const update = { $set: {} };
 
-  if (result.modifiedCount === 1) {
-    res.status(200).json({ message: "Profile updated successfully" });
-  } else {
-    res.status(400).json({ message: "Profile not found or no changes made" });
+    // Update fields if provided
+    if (photoUrl) update.$set.photoURL = photoUrl; // Set photoURL if provided
+    if (about) update.$set["userInfo.0.about"] = about; // Update about
+    if (phone) update.$set["userInfo.0.phone"] = phone; // Update phone
+    if (socialLinks && Array.isArray(socialLinks)) {
+      update.$set["userInfo.0.socialLinks"] = socialLinks; // Update social links
+    }
+
+    // Check if there's anything to update
+    if (Object.keys(update.$set).length === 0) {
+      return res.status(400).json({ message: "Nothing to update" });
+    }
+
+    // Perform the update using an array filter to match the existing userInfo
+    const result = await userCollection.updateOne(
+      { email }, // Find the user by email
+      update // Apply the update
+    );
+
+    // Check if the update was successful
+    if (result.modifiedCount === 1) {
+      res.status(200).json({ message: "Profile updated successfully" });
+    } else {
+      res.status(400).json({ message: "Profile not found or no changes made" });
+    }
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
