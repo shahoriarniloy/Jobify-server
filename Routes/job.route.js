@@ -8,13 +8,13 @@ import {
   getAllJobsCounts,
   getPostedJobs,
   getSpecificJob,
-  postAJob,
   RelatedJobs,
   searchLocation,
   singleJob,
   getAppliedCandidates,
   companiesJobApplication,
   updateCandidateStatus,
+  postJob,
 } from "../Controllers/job.controller.js";
 
 const jobRouter = express.Router();
@@ -34,7 +34,7 @@ jobRouter.get("/RelatedJobs", RelatedJobs);
 jobRouter.get("/appliedCandidates", getAppliedCandidates);
 
 // Post Route
-jobRouter.post("/postJob", postAJob);
+jobRouter.post("/postJob", postJob);
 jobRouter.post("/apply_job", applyAJob);
 
 // Update Route

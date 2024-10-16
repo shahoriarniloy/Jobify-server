@@ -27,6 +27,7 @@ import {
   postProfileSettings,
   postUserInfo,
   getUserByEmail,
+  getResumeByEmail,
 } from "../Controllers/user.controller.js";
 const userRouter = express.Router();
 
@@ -45,6 +46,7 @@ userRouter.get("/individual-messages", individualMessage);
 userRouter.get("/posts", getPosts);
 userRouter.get("/post/:postId", getPost);
 userRouter.get("/users/:email", getUserByEmail);
+userRouter.get("/resume/:email", getResumeByEmail);
 
 // Post Route
 userRouter.post("/users", createUser);

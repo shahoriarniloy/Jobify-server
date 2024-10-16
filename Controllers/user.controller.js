@@ -8,6 +8,7 @@ import {
   postsCollection,
   followingsCollection,
   companiesCollection,
+  resumesCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
 
@@ -599,4 +600,16 @@ export const getUserByEmail = async (req, res) => {
     console.error("Error fetching user:", error);
     res.status(500).json({ message: "Internal server error" });
   }
+};
+
+export const getResumeByEmail = async (req, res) => {
+  const { email } = req.params;
+
+  const resume = await resumesCollection.findOne({ email });
+
+  if (!resume) {
+    return res.status(404).json({ message: "Resume not found" });
+  }
+
+  res.status(200).json(resume);
 };

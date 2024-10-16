@@ -5,14 +5,20 @@ import {
   userCollection,
 } from "../Models/database.model.js";
 
-export const postAJob = async (req, res) => {
-  const jobData = req.body;
-  try {
-    const result = await jobsCollection.insertOne(jobData);
-    res.status(200).send(result);
-  } catch (error) {
-    res.status(500).send({ message: "Internal Server Error" });
-  }
+export const postJob = async (req, res) => {
+  const job = req.body;
+  console.log(job);
+
+  const result = await jobsCollection.insertOne(job);
+  const insertedId = result.insertedId;
+
+  req.io.emit("jobPosted", {
+    jobId: insertedId,
+    jobTitle: job.title,
+    company: job.company,
+  });
+
+  res.status(201).json({ message: "Job posted successfully!", job });
 };
 
 export const advanceSearch = async (req, res) => {
