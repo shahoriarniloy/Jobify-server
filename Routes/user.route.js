@@ -25,6 +25,11 @@ import {
   unfollowJobSeeker,
   checkFollowStatus,
   postProfileSettings,
+  postUserInfo,
+  getUserByEmail,
+  getResumeByEmail,
+  createOrUpdateResume,
+  getJobCountsByEmail,
 } from "../Controllers/user.controller.js";
 const userRouter = express.Router();
 
@@ -42,6 +47,9 @@ userRouter.get("/conversations", userConversion);
 userRouter.get("/individual-messages", individualMessage);
 userRouter.get("/posts", getPosts);
 userRouter.get("/post/:postId", getPost);
+userRouter.get("/users/:email", getUserByEmail);
+userRouter.get("/resume/:email", getResumeByEmail);
+userRouter.get("/getJobCountsByEmail/:email", getJobCountsByEmail);
 
 // Post Route
 userRouter.post("/users", createUser);
@@ -50,7 +58,9 @@ userRouter.post("/reviews", postReview);
 userRouter.post("/sendMessage", sendMessage);
 userRouter.post("/postStatus", postStatus);
 userRouter.post("/follow-job-seeker", followJobSeeker);
-userRouter.post("/profile-updating",postProfileSettings)
+userRouter.post("/userInfo-updating", postUserInfo);
+userRouter.post("/profile-updating", postProfileSettings);
+userRouter.post("/createOrUpdateResume", createOrUpdateResume);
 
 // Delete Route
 userRouter.delete("/unfollow-job-seeker", unfollowJobSeeker);

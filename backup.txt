@@ -267,7 +267,6 @@ async function run() {
 
     app.get("/user-role", async (req, res) => {
       const email = req.query.email;
-      console.log("Called");
       console.log("email", email);
       try {
         const user = await userCollection.findOne({ email });
@@ -481,7 +480,6 @@ async function run() {
     });
 
     app.get("/single-job/:id", async (req, res) => {
-      console.log("API Called");
       const { id } = req.params;
       // console.log("Id:", id);
 

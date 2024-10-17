@@ -8,6 +8,7 @@ import {
   postsCollection,
   followingsCollection,
   companiesCollection,
+  resumesCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
 
@@ -48,7 +49,6 @@ export const searchJobSeekers = async (req, res) => {
 };
 
 export const followJobSeeker = async (req, res) => {
-  // console.log("called");
   const { followerEmail, followedEmail } = req.body;
 
   const existingFollow = await followingsCollection.findOne({
@@ -459,7 +459,6 @@ export const userDetails = async (req, res) => {
   }
 };
 
-
 export const userConversion = async (req, res) => {
   const currentUserEmail = req.query.email;
   try {
@@ -524,10 +523,18 @@ export const individualMessage = async (req, res) => {
   }
 };
 
-
 export const postProfileSettings = async (req, res) => {
   try {
-    const { userEmail, schoolName, degree, field, startDate, endDate, cgpa, description } = req.body;
+    const {
+      userEmail,
+      schoolName,
+      degree,
+      field,
+      startDate,
+      endDate,
+      cgpa,
+      description,
+    } = req.body;
     const query = { email: userEmail };
 
     const educationData = {
@@ -537,17 +544,139 @@ export const postProfileSettings = async (req, res) => {
       startDate,
       endDate,
       cgpa,
-      description
+      description,
     };
     const update = { $push: { education: educationData } };
     const result = await userCollection.updateOne(query, update);
 
     if (result.modifiedCount === 1) {
-      res.status(200).json({ message: 'Education data added successfully' });
+      res.status(200).json({ message: "Education data added successfully" });
     } else {
-      res.status(400).json({ message: 'Profile not found or no changes made' });
+      res.status(400).json({ message: "Profile not found or no changes made" });
     }
   } catch (error) {
-    res.status(500).json({ message: 'Internal server error' });
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const postUserInfo = async (req, res) => {
+  try {
+    console.log(req.body);
+    const { about, phone, photoUrl, email, socialLinks } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+
+    const update = { $set: {} };
+
+    if (photoUrl) update.$set.photoURL = photoUrl;
+    if (about) update.$set["userInfo.0.about"] = about;
+    if (phone) update.$set["userInfo.0.phone"] = phone;
+    if (socialLinks && Array.isArray(socialLinks)) {
+      update.$set["userInfo.0.socialLinks"] = socialLinks;
+    }
+
+    if (Object.keys(update.$set).length === 0) {
+      return res.status(400).json({ message: "Nothing to update" });
+    }
+
+    const result = await userCollection.updateOne({ email }, update);
+
+    if (result.modifiedCount === 1) {
+      res.status(200).json({ message: "Profile updated successfully" });
+    } else {
+      res.status(400).json({ message: "Profile not found or no changes made" });
+    }
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getUserByEmail = async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    const user = await userCollection.findOne({ email });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json(user);
+  } catch (error) {
+    console.error("Error fetching user:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getResumeByEmail = async (req, res) => {
+  const { email } = req.params;
+
+  const resume = await resumesCollection.findOne({ email });
+
+  if (!resume) {
+    return res.status(404).json({ message: "Resume not found" });
+  }
+
+  res.status(200).json(resume);
+};
+
+export const createOrUpdateResume = async (req, res) => {
+  const { email, ...resumeData } = req.body;
+
+  try {
+    const existingResume = await resumesCollection.findOne({ email });
+
+    if (existingResume) {
+      const { _id, ...updateData } = resumeData;
+      console.log(resumeData);
+
+      const updatedResume = await resumesCollection.findOneAndUpdate(
+        { email },
+        { $set: updateData },
+        { new: true }
+      );
+
+      return res
+        .status(200)
+        .json({ message: "Resume updated successfully", updatedResume });
+    } else {
+      const newResume = await resumesCollection.insertOne({
+        email,
+        ...resumeData,
+      });
+
+      return res
+        .status(201)
+        .json({ message: "New resume created successfully", newResume });
+    }
+  } catch (error) {
+    console.error("Error saving resume:", error);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const getJobCountsByEmail = async (req, res) => {
+  const { email } = req.params;
+  console.log(email);
+
+  try {
+    const appliedJobsCount = await applicationsCollection.countDocuments({
+      user_email: email,
+    });
+
+    const favoriteJobsCount = await bookmarksCollection.countDocuments({
+      userEmail: email,
+    });
+
+    res.status(200).json({
+      appliedJobsCount,
+      favoriteJobsCount,
+    });
+  } catch (error) {
+    console.error("Error fetching job counts:", error);
+    res.status(500).json({ message: "Error fetching job counts" });
   }
 };

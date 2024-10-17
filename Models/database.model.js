@@ -26,3 +26,4 @@ export const postsCollection = database.collection("posts");
 export const followingsCollection = database.collection("following");
 export const schoolName = database.collection("schoolName");
 export const educationsDegree = database.collection("educationsDegree");
+export const resumesCollection = database.collection("resumes");
