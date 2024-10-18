@@ -67,7 +67,7 @@ const getUser = (email) => {
 };
 
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
+  // console.log("A user connected", socket.id);
 
   socket.on("newUser", (email) => {
     addNewUser(email, socket.id);
@@ -75,7 +75,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     removeUser(socket.id);
-    console.log("A user disconnected", socket.id);
+    // console.log("A user disconnected", socket.id);
   });
 });
 

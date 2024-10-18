@@ -305,3 +305,20 @@ export const companyAccountInfo = async (req, res) => {
       .json({ message: "Error updating account information", error });
   }
 };
+
+export const deleteCompany = async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    const result1 = await userCollection.deleteOne({ email: email });
+    const result2 = await companiesCollection.deleteOne({ email: email });
+
+    if (result1.deletedCount === 1 && result2.deletedCount === 1) {
+      res.status(200).json({ message: "Job seeker deleted successfully." });
+    } else {
+      res.status(404).json({ message: "Job seeker not found." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+};

@@ -30,6 +30,7 @@ import {
   getResumeByEmail,
   createOrUpdateResume,
   getJobCountsByEmail,
+  deleteUser,
 } from "../Controllers/user.controller.js";
 const userRouter = express.Router();
 
@@ -66,6 +67,7 @@ userRouter.post("/createOrUpdateResume", createOrUpdateResume);
 userRouter.delete("/unfollow-job-seeker", unfollowJobSeeker);
 
 userRouter.delete("/bookmarks/:email/:jobId", deleteUserBookmark);
+userRouter.delete("/deleteUser/:email", deleteUser);
 
 // Put Route
 
