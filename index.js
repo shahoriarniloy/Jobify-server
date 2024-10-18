@@ -53,6 +53,7 @@ app.use(otherRouter);
 
 let onlineUsers = [];
 
+<<<<<<< HEAD
 const addNewUser = (email, socketId) => {
   !onlineUsers.some((user) => user.email === email) &&
     onlineUsers.push({ email, socketId });
@@ -84,5 +85,20 @@ app.get("/", (req, res) => {
 });
 
 server.listen(port, () => {
+=======
+async function run() {
+  try {
+
+    console.log("Successfully connected to MongoDB!");
+  } finally {
+    app.get("/", (req, res) => {
+      res.send("Jobify server");
+    });
+  }
+}
+run().catch(console.dir);
+
+app.listen(port, () => {
+>>>>>>> bc15318b124a007a581e398d3e17fb3313880815
   console.log(`Server is running on port: ${port}`);
 });
