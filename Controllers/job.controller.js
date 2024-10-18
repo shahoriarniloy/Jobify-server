@@ -8,16 +8,13 @@ import {
 export const postJob = async (req, res) => {
   const job = req.body;
   console.log(job);
-
   const result = await jobsCollection.insertOne(job);
   const insertedId = result.insertedId;
-
   req.io.emit("jobPosted", {
     jobId: insertedId,
     jobTitle: job.title,
     company: job.company,
   });
-
   res.status(201).json({ message: "Job posted successfully!", job });
 };
 

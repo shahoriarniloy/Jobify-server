@@ -11,6 +11,7 @@ import {
   companyFoundingInfo,
   companySocialInfo,
   companyAccountInfo,
+  deleteCompany,
 } from "../Controllers/company.controller.js";
 
 const companyRouter = express.Router();
@@ -31,6 +32,7 @@ companyRouter.post("/companySocialInfo", companySocialInfo);
 companyRouter.post("/companyAccountInfo", companyAccountInfo);
 
 // Delete Route
+companyRouter.delete("/deleteCompany/:email", deleteCompany);
 
 // Update Route
 

@@ -548,6 +548,7 @@ export const postProfileSettings = async (req, res) => {
     };
     const update = { $push: { education: educationData } };
     const result = await userCollection.updateOne(query, update);
+    const resume = await resumesCollection.updateOne(query, update);
 
     if (result.modifiedCount === 1) {
       res.status(200).json({ message: "Education data added successfully" });
@@ -678,5 +679,21 @@ export const getJobCountsByEmail = async (req, res) => {
   } catch (error) {
     console.error("Error fetching job counts:", error);
     res.status(500).json({ message: "Error fetching job counts" });
+  }
+};
+
+export const deleteUser = async (req, res) => {
+  const { email } = req.params;
+
+  try {
+    const result = await userCollection.deleteOne({ email: email });
+
+    if (result.deletedCount === 1) {
+      res.status(200).json({ message: "Job seeker deleted successfully." });
+    } else {
+      res.status(404).json({ message: "Job seeker not found." });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
 };
