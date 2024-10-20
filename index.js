@@ -7,6 +7,7 @@ import companyRoute from "./Routes/company.route.js";
 import jobRouter from "./Routes/job.route.js";
 import adminRouter from "./Routes/admin.route.js";
 import otherRouter from "./Routes/other.route.js";
+import nodemailer from "nodemailer";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -78,6 +79,16 @@ io.on("connection", (socket) => {
     // console.log("A user disconnected", socket.id);
   });
 });
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+export default transporter;
 
 app.get("/", (req, res) => {
   res.send("Jobify server is running");
