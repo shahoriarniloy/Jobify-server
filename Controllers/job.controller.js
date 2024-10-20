@@ -173,45 +173,113 @@ export const applyAJob = async (req, res) => {
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
 };
-
 export const updateCandidateStatus = async (req, res) => {
-  const { email, status, applicationId, name, jobId } = req.body;
-  console.log(req.body);
+  console.log("Received request body:", req.body);
 
-  if (!email || !status) {
-    return res.status(400).send({ message: "Email and status are required." });
+  const {
+    email,
+    status,
+    applicationId,
+    name,
+    jobId,
+    interviewDate,
+    interviewTime,
+    roomId,
+  } = req.body;
+
+  console.log("Request Fields:", {
+    email,
+    status,
+    applicationId,
+    name,
+    jobId,
+    interviewDate,
+    interviewTime,
+    roomId,
+  });
+
+  if (!email || !status || !applicationId || !name || !jobId) {
+    return res.status(400).send({
+      message: "Email, status, applicationId, name, and jobId are required.",
+    });
   }
+
   const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
-  console.log(job);
+  console.log("Job found:", job);
+
+  if (!job) {
+    return res.status(404).send({ message: "Job not found." });
+  }
+
+  const updateData = { status: status };
+
+  if (status === "Interview Scheduled") {
+    if (!interviewDate || !interviewTime || !roomId) {
+      return res.status(400).send({
+        message:
+          "Interview date, time, and room ID are required for scheduling an interview.",
+      });
+    }
+
+    const existingApplication = await applicationsCollection.findOne({
+      user_email: email,
+      _id: new ObjectId(applicationId),
+    });
+    if (existingApplication && existingApplication.interviewDetails) {
+      return res.status(400).send({ message: "Interview already scheduled." });
+    }
+
+    updateData.interviewDetails = {
+      date: interviewDate,
+      time: interviewTime,
+      roomId: roomId,
+    };
+  } else {
+    const existingApplication = await applicationsCollection.findOne({
+      user_email: email,
+      _id: new ObjectId(applicationId),
+    });
+
+    if (existingApplication && existingApplication.interviewDetails) {
+      updateData.interviewDetails = null;
+    }
+  }
 
   const result = await applicationsCollection.updateOne(
     { user_email: email, _id: new ObjectId(applicationId) },
-    { $set: { status: status } }
+    { $set: updateData }
   );
 
   if (result.matchedCount === 0) {
     return res.status(404).send({ message: "Candidate not found." });
   }
 
+  let emailContent = `Dear ${name},\n\n${job.company} has updated your application status to "${status}" for the ${job.title} position.\n\n`;
+
+  if (status === "Interview Scheduled") {
+    emailContent += `Your interview is scheduled on ${interviewDate} at ${interviewTime} in Room ID: ${roomId}.\n\n`;
+  }
+
+  emailContent += "Best regards,\nJobify";
+
   const mailOptions = {
     from: process.env.EMAIL_USER,
     to: email,
     subject: "Your Application Status has been Updated",
-    text: `Dear ${name}, \n\n${job.company} has updated your application status to "${status}" for the ${job.title} position.\n\nBest regards,\$Jobify`,
+    text: emailContent,
   };
 
-  transporter.sendMail(mailOptions, (err, info) => {
-    if (err) {
-      console.error("Error sending email:", err);
-      return res
-        .status(500)
-        .send({ message: "Status updated, but email failed to send." });
-    } else {
-      return res.send({
-        message: "Status updated and email sent successfully.",
-      });
-    }
-  });
+  try {
+    await transporter.sendMail(mailOptions);
+    return res.send({
+      message: "Status updated and email sent successfully.",
+    });
+  } catch (err) {
+    console.error("Error sending email:", err);
+    return res.status(500).send({
+      message: "Status updated, but email failed to send.",
+    });
+  }
 };
 
 export const checkAlreadyApplied = async (req, res) => {
@@ -242,7 +310,6 @@ export const getPostedJobs = async (req, res) => {
 
 export const companiesJobs = async (req, res) => {
   const { email } = req.params;
-  // console.log(email);
   try {
     const jobs = await jobsCollection
       .find({
@@ -255,7 +322,6 @@ export const companiesJobs = async (req, res) => {
 
     res.json(jobs);
   } catch (error) {
-    // console.error("Error fetching jobs by company ID:", error);
     res.status(500).send("Server Error");
   }
 };
