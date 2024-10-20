@@ -1,4 +1,5 @@
 import { ObjectId } from "mongodb";
+import transporter from "../index.js";
 import {
   applicationsCollection,
   jobsCollection,
@@ -174,11 +175,14 @@ export const applyAJob = async (req, res) => {
 };
 
 export const updateCandidateStatus = async (req, res) => {
-  const { email, status, applicationId } = req.body;
+  const { email, status, applicationId, name, jobId } = req.body;
+  console.log(req.body);
 
   if (!email || !status) {
-    return res.send({ message: "Email and status are required." });
+    return res.status(400).send({ message: "Email and status are required." });
   }
+  const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
+  console.log(job);
 
   const result = await applicationsCollection.updateOne(
     { user_email: email, _id: new ObjectId(applicationId) },
@@ -186,10 +190,28 @@ export const updateCandidateStatus = async (req, res) => {
   );
 
   if (result.matchedCount === 0) {
-    return res.send({ message: "Candidate not found." });
+    return res.status(404).send({ message: "Candidate not found." });
   }
 
-  res.send({ message: "Status updated successfully." });
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: "Your Application Status has been Updated",
+    text: `Dear ${name}, \n\n${job.company} has updated your application status to "${status}" for the ${job.title} position.\n\nBest regards,\$Jobify`,
+  };
+
+  transporter.sendMail(mailOptions, (err, info) => {
+    if (err) {
+      console.error("Error sending email:", err);
+      return res
+        .status(500)
+        .send({ message: "Status updated, but email failed to send." });
+    } else {
+      return res.send({
+        message: "Status updated and email sent successfully.",
+      });
+    }
+  });
 };
 
 export const checkAlreadyApplied = async (req, res) => {
