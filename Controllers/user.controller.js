@@ -695,3 +695,51 @@ export const getAllUsers = async (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
+
+export const addFavoriteCompany = async (req, res) => {
+  const { companyEmail } = req.body;
+  const userEmail = req.params.userEmail;
+
+  try {
+    const user = await userCollection.findOne({ email: userEmail });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Check if the company is already favorite
+    if (user.favorite_company && user.favorite_company.includes(companyEmail)) {
+      return res
+        .status(400)
+        .json({ message: "company is already in favorite" });
+    }
+
+    // Add company to favorites
+    await userCollection.updateOne(
+      { email: userEmail },
+      { $addToSet: { favorite_company: companyEmail } }
+    );
+
+    res.status(200).json({ message: "Company added to favorites" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "server error" });
+  }
+};
+
+export const deleteFavoriteCompany = async (req, res) => {
+  const { userEmail, companyEmail } = req.params;
+
+  try {
+    const user = await userCollection.findOne({ email: userEmail });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Remove company from favorites
+    await userCollection.updateOne(
+      { email: userEmail },
+      { $pull: { favorite_company: companyEmail } }
+    );
+    res.status(200).json({ message: "Company removed from favorites" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "server error" });
+  }
+};
