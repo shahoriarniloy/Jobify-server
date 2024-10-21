@@ -754,3 +754,21 @@ export const deleteFavoriteCompany = async (req, res) => {
     res.status(500).json({ message: "server error" });
   }
 };
+
+export const checkIsFavorite = async (req, res) => {
+  const { email, companyEmail } = req.params; // Fix destructuring
+
+  try {
+    const user = await userCollection.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if the companyEmail is in the user's favoriteCompany array
+    const isFavorite = user.favoriteCompany.includes(companyEmail);
+    res.json({ isFavorite });
+  } catch (error) {
+    console.error("Error checking favorite company:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};

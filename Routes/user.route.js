@@ -30,6 +30,11 @@ import {
   getResumeByEmail,
   createOrUpdateResume,
   getJobCountsByEmail,
+  getFavoriteCompanies,
+  addFavoriteCompany,
+  deleteFavoriteCompany,
+  getAllUsers,
+  checkIsFavorite,
 } from "../Controllers/user.controller.js";
 const userRouter = express.Router();
 
@@ -52,6 +57,8 @@ userRouter.get("/resume/:email", getResumeByEmail);
 userRouter.get("/getJobCountsByEmail/:email", getJobCountsByEmail);
 userRouter.get("/users", getAllUsers);
 userRouter.get("/users/:userEmail/favorite-company", getFavoriteCompanies);
+userRouter.get("/users/:email/favorite-company/:companyEmail", checkIsFavorite);
+
 
 // Post Route
 userRouter.post("/users", createUser);
@@ -68,6 +75,10 @@ userRouter.post("/users/:userEmail/favorite-company", addFavoriteCompany);
 // Delete Route
 userRouter.delete("/unfollow-job-seeker", unfollowJobSeeker);
 userRouter.delete("/bookmarks/:email/:jobId", deleteUserBookmark);
+userRouter.delete(
+  "/users/:userEmail/favorite-company/:companyEmail",
+  deleteFavoriteCompany
+);
 
 // Put Route
 
