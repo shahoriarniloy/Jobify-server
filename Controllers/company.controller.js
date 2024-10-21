@@ -57,14 +57,14 @@ export const getCompanies = async (req, res) => {
   }
 };
 
-export const getCountingTotalCompanies = async (req, res) => {
-  try {
-    const count = await companiesCollection.countDocuments();
-    res.json({ totalCompanies: count });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+// export const getCountingTotalCompanies = async (req, res) => {
+//   try {
+//     const count = await companiesCollection.countDocuments();
+//     res.json({ totalCompanies: count });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 export const getSpecificCompany = async (req, res) => {
   const { email } = req.params;
