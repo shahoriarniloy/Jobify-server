@@ -26,10 +26,7 @@ const io = new Server(server, {
   },
 });
 
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
+
 
 app.use(
   cors({
@@ -43,7 +40,10 @@ app.use(
     credentials: true,
   })
 );
-
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 app.use(json());
 app.use(UserRouter);
 app.use(companyRoute);
@@ -67,15 +67,12 @@ const getUser = (email) => {
 };
 
 io.on("connection", (socket) => {
-  console.log("A user connected", socket.id);
-
   socket.on("newUser", (email) => {
     addNewUser(email, socket.id);
   });
 
   socket.on("disconnect", () => {
     removeUser(socket.id);
-    console.log("A user disconnected", socket.id);
   });
 });
 
