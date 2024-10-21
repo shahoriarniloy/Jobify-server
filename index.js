@@ -7,6 +7,7 @@ import companyRoute from "./Routes/company.route.js";
 import jobRouter from "./Routes/job.route.js";
 import adminRouter from "./Routes/admin.route.js";
 import otherRouter from "./Routes/other.route.js";
+import nodemailer from "nodemailer";
 
 const app = express();
 const port = process.env.PORT || 5000;
@@ -53,18 +54,46 @@ app.use(otherRouter);
 
 let onlineUsers = [];
 
-async function run() {
-  try {
+const addNewUser = (email, socketId) => {
+  !onlineUsers.some((user) => user.email === email) &&
+    onlineUsers.push({ email, socketId });
+};
 
-    console.log("Successfully connected to MongoDB!");
-  } finally {
-    app.get("/", (req, res) => {
-      res.send("Jobify server");
-    });
-  }
-}
-run().catch(console.dir);
+const removeUser = (socketId) => {
+  onlineUsers = onlineUsers.filter((user) => user.socketId !== socketId);
+};
 
-app.listen(port, () => {
+const getUser = (email) => {
+  return onlineUsers.find((user) => user.email === email);
+};
+
+io.on("connection", (socket) => {
+  // console.log("A user connected", socket.id);
+
+  socket.on("newUser", (email) => {
+    addNewUser(email, socket.id);
+  });
+
+  socket.on("disconnect", () => {
+    removeUser(socket.id);
+    // console.log("A user disconnected", socket.id);
+  });
+});
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
+export default transporter;
+
+app.get("/", (req, res) => {
+  res.send("Jobify server is running");
+});
+
+server.listen(port, () => {
   console.log(`Server is running on port: ${port}`);
 });

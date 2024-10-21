@@ -548,6 +548,7 @@ export const postProfileSettings = async (req, res) => {
     };
     const update = { $push: { education: educationData } };
     const result = await userCollection.updateOne(query, update);
+    const resume = await resumesCollection.updateOne(query, update);
 
     if (result.modifiedCount === 1) {
       res.status(200).json({ message: "Education data added successfully" });
