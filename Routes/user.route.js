@@ -30,6 +30,7 @@ import {
   getResumeByEmail,
   createOrUpdateResume,
   getJobCountsByEmail,
+  getAllUsers,
 } from "../Controllers/user.controller.js";
 const userRouter = express.Router();
 
@@ -50,6 +51,7 @@ userRouter.get("/post/:postId", getPost);
 userRouter.get("/users/:email", getUserByEmail);
 userRouter.get("/resume/:email", getResumeByEmail);
 userRouter.get("/getJobCountsByEmail/:email", getJobCountsByEmail);
+userRouter.get("/users", getAllUsers);
 
 // Post Route
 userRouter.post("/users", createUser);
