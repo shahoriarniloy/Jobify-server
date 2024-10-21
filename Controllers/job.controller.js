@@ -2,20 +2,35 @@ import { ObjectId } from "mongodb";
 import transporter from "../index.js";
 import {
   applicationsCollection,
+  jobCategoryCollection,
   jobsCollection,
   userCollection,
 } from "../Models/database.model.js";
 
+export const jobCategories = async (req, res) => {
+  const categories = await jobCategoryCollection.find({}).toArray();
+  res.status(200).json(categories);
+};
+
 export const postJob = async (req, res) => {
   const job = req.body;
-  console.log(job);
+
   const result = await jobsCollection.insertOne(job);
   const insertedId = result.insertedId;
+
   req.io.emit("jobPosted", {
     jobId: insertedId,
     jobTitle: job.title,
     company: job.company,
   });
+
+  const categoryName = job.jobCategory;
+
+  const categoryCountUpdate = await jobCategoryCollection.updateOne(
+    { name: categoryName },
+    { $inc: { count: 1 } }
+  );
+
   res.status(201).json({ message: "Job posted successfully!", job });
 };
 
@@ -173,9 +188,8 @@ export const applyAJob = async (req, res) => {
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
 };
-export const updateCandidateStatus = async (req, res) => {
-  console.log("Received request body:", req.body);
 
+export const updateCandidateStatus = async (req, res) => {
   const {
     email,
     status,
@@ -187,17 +201,6 @@ export const updateCandidateStatus = async (req, res) => {
     roomId,
   } = req.body;
 
-  console.log("Request Fields:", {
-    email,
-    status,
-    applicationId,
-    name,
-    jobId,
-    interviewDate,
-    interviewTime,
-    roomId,
-  });
-
   if (!email || !status || !applicationId || !name || !jobId) {
     return res.status(400).send({
       message: "Email, status, applicationId, name, and jobId are required.",
@@ -205,7 +208,6 @@ export const updateCandidateStatus = async (req, res) => {
   }
 
   const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
-  console.log("Job found:", job);
 
   if (!job) {
     return res.status(404).send({ message: "Job not found." });
@@ -275,7 +277,7 @@ export const updateCandidateStatus = async (req, res) => {
       message: "Status updated and email sent successfully.",
     });
   } catch (err) {
-    console.error("Error sending email:", err);
+    // console.error("Error sending email:", err);
     return res.status(500).send({
       message: "Status updated, but email failed to send.",
     });
