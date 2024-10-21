@@ -31,6 +31,7 @@ import {
   createOrUpdateResume,
   getJobCountsByEmail,
   getAllUsers,
+  getFavoriteCompanies,
   addFavoriteCompany,
   deleteFavoriteCompany,
 } from "../Controllers/user.controller.js";
@@ -54,6 +55,7 @@ userRouter.get("/users/:email", getUserByEmail);
 userRouter.get("/resume/:email", getResumeByEmail);
 userRouter.get("/getJobCountsByEmail/:email", getJobCountsByEmail);
 userRouter.get("/users", getAllUsers);
+userRouter.get("/users/:userEmail/favorite-company", getFavoriteCompanies);
 
 // Post Route
 userRouter.post("/users", createUser);

@@ -696,6 +696,21 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+export const getFavoriteCompanies = async (req, res) => {
+  const { userEmail } = req.params;
+
+  try {
+    const user = await userCollection.findOne({ email: userEmail });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // return the list of favorite companies
+    return res.status(200).json({ favoriteCompanies: user.favoriteCompany });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
 export const addFavoriteCompany = async (req, res) => {
   const { companyEmail } = req.body;
   const userEmail = req.params.userEmail;
@@ -706,7 +721,7 @@ export const addFavoriteCompany = async (req, res) => {
     if (!user) return res.status(404).json({ message: "User not found" });
 
     // Check if the company is already favorite
-    if (user.favorite_company && user.favorite_company.includes(companyEmail)) {
+    if (user.favoriteCompany && user.favoriteCompany.includes(companyEmail)) {
       return res
         .status(400)
         .json({ message: "company is already in favorite" });
@@ -715,7 +730,7 @@ export const addFavoriteCompany = async (req, res) => {
     // Add company to favorites
     await userCollection.updateOne(
       { email: userEmail },
-      { $addToSet: { favorite_company: companyEmail } }
+      { $addToSet: { favoriteCompany: companyEmail } }
     );
 
     res.status(200).json({ message: "Company added to favorites" });
@@ -735,7 +750,7 @@ export const deleteFavoriteCompany = async (req, res) => {
     // Remove company from favorites
     await userCollection.updateOne(
       { email: userEmail },
-      { $pull: { favorite_company: companyEmail } }
+      { $pull: { favoriteCompany: companyEmail } }
     );
     res.status(200).json({ message: "Company removed from favorites" });
   } catch (error) {
