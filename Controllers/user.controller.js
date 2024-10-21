@@ -713,30 +713,25 @@ export const getFavoriteCompanies = async (req, res) => {
 
 export const addFavoriteCompany = async (req, res) => {
   const { companyEmail } = req.body;
-  const userEmail = req.params.userEmail;
+  const { userEmail } = req.params;
 
   try {
-    const user = await userCollection.findOne({ email: userEmail });
-
-    if (!user) return res.status(404).json({ message: "User not found" });
-
-    // Check if the company is already favorite
-    if (user.favoriteCompany && user.favoriteCompany.includes(companyEmail)) {
-      return res
-        .status(400)
-        .json({ message: "company is already in favorite" });
-    }
-
-    // Add company to favorites
-    await userCollection.updateOne(
-      { email: userEmail },
-      { $addToSet: { favoriteCompany: companyEmail } }
+    // Use findOneAndUpdate for atomic operation
+    const user = await userCollection.findOneAndUpdate(
+      { email: userEmail, favoriteCompany: { $ne: companyEmail } }, // Check that company is not already in favorites
+      { $addToSet: { favoriteCompany: companyEmail } },
+      { new: true } // Return the updated document
     );
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "User not found or company already in favorite" });
 
     res.status(200).json({ message: "Company added to favorites" });
   } catch (error) {
     console.error(error);
-    res.status(500).json({ message: "server error" });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
