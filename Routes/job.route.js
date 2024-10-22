@@ -5,7 +5,6 @@ import {
   checkAlreadyApplied,
   companiesJobs,
   getAllJobs,
-  getAllJobsCounts,
   getPostedJobs,
   getSpecificJob,
   RelatedJobs,
@@ -15,6 +14,7 @@ import {
   companiesJobApplication,
   updateCandidateStatus,
   postJob,
+  homePageInfo,
 } from "../Controllers/job.controller.js";
 
 const jobRouter = express.Router();
@@ -23,7 +23,7 @@ const jobRouter = express.Router();
 jobRouter.get("/jobs/advanced-search", advanceSearch);
 jobRouter.get("/jobs/search", searchLocation);
 jobRouter.get("/jobs/:id", getSpecificJob);
-jobRouter.get("/jobs-count", getAllJobsCounts);
+// jobRouter.get("/jobs-count", getAllJobsCounts);
 jobRouter.get("/jobs", getAllJobs);
 jobRouter.get("/check_application", checkAlreadyApplied);
 jobRouter.get("/company-jobs", getPostedJobs);
@@ -32,6 +32,8 @@ jobRouter.get("/jobs/dashboard/company/:email", companiesJobApplication);
 jobRouter.get("/single-job/:id", singleJob);
 jobRouter.get("/RelatedJobs", RelatedJobs);
 jobRouter.get("/appliedCandidates", getAppliedCandidates);
+
+jobRouter.get("/homepage-info",homePageInfo)
 
 // Post Route
 jobRouter.post("/postJob", postJob);

@@ -16,10 +16,6 @@ import { ObjectId } from "mongodb";
 export const createUser = async (req, res) => {
   const user = req.body;
   const query = { email: user.email };
-  const existingUser = await userCollection.findOne(query);
-  if (existingUser) {
-    return res.send({ messege: "User already exists", insertedId: null });
-  }
   const result = await userCollection.insertOne(user);
   res.send(result);
 };
@@ -323,26 +319,6 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-export const getAllReview = async (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 3;
-
-  const skip = (page - 1) * limit;
-
-  const cursor = reviewsCollection
-    .find()
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit);
-  const result = await cursor.toArray();
-  const totalReviews = await reviewsCollection.countDocuments();
-
-  res.send({
-    reviews: result,
-    totalPages: Math.ceil(totalReviews / limit),
-    currentPage: page,
-  });
-};
 
 export const checkJobAlreadyApplied = async (req, res) => {
   const email = req.query?.email;
