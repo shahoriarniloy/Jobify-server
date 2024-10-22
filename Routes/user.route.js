@@ -6,7 +6,6 @@ import {
   createUser,
   createUserBookmark,
   deleteUserBookmark,
-  getAllReview,
   getMessage,
   getUserBookmark,
   getUserRole,
@@ -39,7 +38,6 @@ userRouter.get("/user-role", getUserRole);
 userRouter.get("/job-seekers", searchJobSeekers);
 userRouter.get("/check-follow-status", checkFollowStatus);
 userRouter.get("/bookmarks", getUserBookmark);
-userRouter.get("/reviews", getAllReview);
 userRouter.get("/check-already-applied", checkJobAlreadyApplied);
 userRouter.get("/check-applied-jobs", checkAppliedJobs);
 userRouter.get("/messages/:receiverEmail/:senderEmail", getMessage);

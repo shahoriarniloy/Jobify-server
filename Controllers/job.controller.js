@@ -5,6 +5,7 @@ import {
   companiesCollection,
   jobCategory,
   jobsCollection,
+  reviewsCollection,
   userCollection,
 } from "../Models/database.model.js";
 
@@ -19,7 +20,7 @@ export const homePageInfo = async (req, res) => {
     const categoryCounts = await jobCategory.find().toArray();
     const successPeoples = (await applicationsCollection.find({status:"Hired"}).toArray()).length;
     const candidates = (await userCollection.find({role:"Job Seeker"}).toArray()).length;
-    
+    const reviews = await reviewsCollection.find().toArray();
     
 
     const response = {
@@ -27,7 +28,8 @@ export const homePageInfo = async (req, res) => {
       companyCount,
       categoryCounts,
       successPeoples,
-      candidates
+      candidates,
+      reviews
     };
 
     res.send(response);
