@@ -9,6 +9,7 @@ import {
   followingsCollection,
   companiesCollection,
   resumesCollection,
+  careersCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
 
@@ -538,7 +539,6 @@ export const postProfileSettings = async (req, res) => {
 
 export const postUserInfo = async (req, res) => {
   try {
-    console.log(req.body);
     const { about, phone, photoUrl, email, socialLinks } = req.body;
 
     if (!email) {
@@ -566,7 +566,7 @@ export const postUserInfo = async (req, res) => {
       res.status(400).json({ message: "Profile not found or no changes made" });
     }
   } catch (error) {
-    console.error("Error updating profile:", error);
+    // console.error("Error updating profile:", error);
     res.status(500).json({ message: "Server error" });
   }
 };
@@ -583,7 +583,7 @@ export const getUserByEmail = async (req, res) => {
 
     res.status(200).json(user);
   } catch (error) {
-    console.error("Error fetching user:", error);
+    // console.error("Error fetching user:", error);
     res.status(500).json({ message: "Internal server error" });
   }
 };
@@ -608,7 +608,7 @@ export const createOrUpdateResume = async (req, res) => {
 
     if (existingResume) {
       const { _id, ...updateData } = resumeData;
-      console.log(resumeData);
+      // console.log(resumeData);
 
       const updatedResume = await resumesCollection.findOneAndUpdate(
         { email },
@@ -630,14 +630,43 @@ export const createOrUpdateResume = async (req, res) => {
         .json({ message: "New resume created successfully", newResume });
     }
   } catch (error) {
-    console.error("Error saving resume:", error);
+    // console.error("Error saving resume:", error);
     return res.status(500).json({ error: "Server error" });
+  }
+};
+
+export const getCareerSuggestions = async (req, res) => {
+  try {
+    const skills = req.body.skills || [];
+
+    if (skills.length === 0) {
+      return res.status(400).json({ message: "No skills provided." });
+    }
+
+    const careers = await careersCollection
+      .find({
+        requiredSkills: { $in: skills },
+      })
+      .toArray();
+
+    if (!careers.length) {
+      return res
+        .status(200)
+        .json({ message: "No career suggestions found.", careers: [] });
+    }
+
+    res.status(200).json(careers);
+  } catch (error) {
+    // console.error("Error fetching career suggestions:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching career suggestions.", error });
   }
 };
 
 export const getJobCountsByEmail = async (req, res) => {
   const { email } = req.params;
-  console.log(email);
+  // console.log(email);
 
   try {
     const appliedJobsCount = await applicationsCollection.countDocuments({
@@ -653,7 +682,7 @@ export const getJobCountsByEmail = async (req, res) => {
       favoriteJobsCount,
     });
   } catch (error) {
-    console.error("Error fetching job counts:", error);
+    // console.error("Error fetching job counts:", error);
     res.status(500).json({ message: "Error fetching job counts" });
   }
 };
@@ -671,5 +700,37 @@ export const deleteUser = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Server error" });
+  }
+  
+
+
+};
+
+export const getCareerSuggestions = async (req, res) => {
+  try {
+    const skills = req.body.skills || [];
+
+    if (skills.length === 0) {
+      return res.status(400).json({ message: "No skills provided." });
+    }
+
+    const careers = await careersCollection
+      .find({
+        requiredSkills: { $in: skills },
+      })
+      .toArray();
+
+    if (!careers.length) {
+      return res
+        .status(200)
+        .json({ message: "No career suggestions found.", careers: [] });
+    }
+
+    res.status(200).json(careers);
+  } catch (error) {
+    // console.error("Error fetching career suggestions:", error);
+    res
+      .status(500)
+      .json({ message: "Error fetching career suggestions.", error });
   }
 };
