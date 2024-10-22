@@ -35,6 +35,7 @@ import {
   deleteFavoriteCompany,
   getAllUsers,
   checkIsFavorite,
+  getLatestJobsForUser,
 } from "../Controllers/user.controller.js";
 const userRouter = express.Router();
 
@@ -58,7 +59,7 @@ userRouter.get("/getJobCountsByEmail/:email", getJobCountsByEmail);
 userRouter.get("/users", getAllUsers);
 userRouter.get("/users/:userEmail/favorite-company", getFavoriteCompanies);
 userRouter.get("/users/:email/favorite-company/:companyEmail", checkIsFavorite);
-
+userRouter.get("/users/:userEmail/latest-jobs", getLatestJobsForUser);
 
 // Post Route
 userRouter.post("/users", createUser);
