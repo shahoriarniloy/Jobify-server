@@ -28,4 +28,6 @@ export const schoolName = database.collection("schoolName");
 export const educationsDegree = database.collection("educationsDegree");
 export const careersCollection = database.collection("requiredJobSkills");
 export const resumesCollection = database.collection("resumes");
-export const jobCategoryCollection = database.collection("jobCategory");
+
+export const jobCategory = database.collection("jobCategory");
+

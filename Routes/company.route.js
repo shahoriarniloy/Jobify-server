@@ -1,7 +1,7 @@
 import express from "express";
 import {
   getCompanies,
-  getCountingTotalCompanies,
+
   getCompaniesPostedJob,
   getTopCompanies,
   getSpecificCompany,
@@ -20,7 +20,7 @@ const companyRouter = express.Router();
 companyRouter.get("/companies-posted-job/:id", getCompaniesPostedJob);
 companyRouter.get("/companies/top", getTopCompanies);
 companyRouter.get("/companies", getCompanies);
-companyRouter.get("/companies/count", getCountingTotalCompanies);
+// companyRouter.get("/companies/count", getCountingTotalCompanies);
 companyRouter.get("/companies/:email", getSpecificCompany);
 companyRouter.get("/companies/search", searchCompany);
 companyRouter.get("/OpenPosition", openPosition);
