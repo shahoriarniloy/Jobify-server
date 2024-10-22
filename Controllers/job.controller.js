@@ -11,63 +11,23 @@ import {
 
 // for home page
 
-// export const homePageInfo = async (req, res) => {
-
-//   const count = await jobsCollection.countDocuments();
-//   const count1 = await companiesCollection.countDocuments();
-//   const jobs = await jobsCollection.find().toArray();
-
-//   // load all categories
-//   const categories = await jobCategory.find().toArray();
-//   const result = jobs.filter(categories=> categories.name)
-//   console.log(result)
-
-//   res.send(categories)
-
-
-
-// }
-
 export const homePageInfo = async (req, res) => {
   try {
     // Count the total number of jobs and companies
     const jobCount = await jobsCollection.countDocuments();
     const companyCount = await companiesCollection.countDocuments();
-    const categories = await jobCategory.find().toArray();
-
-    // Aggregation to group jobs by category and count them
-    const categoryCounts = await jobsCollection.aggregate([
-      {
-        $group: {
-          _id: "$category", 
-          jobCount: { $sum: 1 } 
-        }
-      },
-      {
-        $lookup: {
-          from: "jobCategory", 
-          localField: "_id", 
-          foreignField: "name", 
-          as: "categoryDetails"
-        }
-      },
-      {
-        $unwind: "$categoryDetails"
-      },
-      {
-        $project: {
-          _id: 0,
-          category: "$categoryDetails.name",
-          jobCount: 1 
-        }
-      }
-    ]).toArray();
+    const categoryCounts = await jobCategory.find().toArray();
+    const successPeoples = (await applicationsCollection.find({status:"Hired"}).toArray()).length;
+    const candidates = (await userCollection.find({role:"Job Seeker"}).toArray()).length;
+    
+    
 
     const response = {
       jobCount,
       companyCount,
       categoryCounts,
-      categories
+      successPeoples,
+      candidates
     };
 
     res.send(response);
