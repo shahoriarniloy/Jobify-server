@@ -11,11 +11,6 @@ import {
 
 // for home page
 
-export const jobCategories = async (req, res) => {
-  const categories = await jobCategory.find({}).toArray();
-  res.status(200).json(categories);
-};
-
 export const homePageInfo = async (req, res) => {
   try {
     // Count the total number of jobs and companies
@@ -45,10 +40,19 @@ export const homePageInfo = async (req, res) => {
   }
 };
 
+export const jobCategories = async (req, res) => {
+  const categories = await jobCategory.find().toArray();
+  res.send(categories);
+};
+
 export const postJob = async (req, res) => {
   const job = req.body;
-
+  const jobCategoryName = job?.jobInfo?.jobCategory;
   const result = await jobsCollection.insertOne(job);
+  await jobCategory.updateOne(
+    { name: jobCategoryName },
+    { $inc: { count: 1 } }
+  );
   const insertedId = result.insertedId;
 
   req.io.emit("jobPosted", {
@@ -129,11 +133,11 @@ export const advanceSearch = async (req, res) => {
     const totalJobs = await jobsCollection.countDocuments(query);
 
     const cursor = jobsCollection
-      .find(query)
+      .find(query ? query : null)
       .skip(page * size)
       .limit(size);
     const result = await cursor.toArray();
-    res.json({ totalJobs, jobs: result });
+    res.send({ totalJobs, jobs: result });
   } catch (error) {
     res.status(500).send("Server Error");
   }
@@ -183,15 +187,6 @@ export const getSpecificJob = async (req, res) => {
   }
 };
 
-// export const getAllJobsCounts = async (req, res) => {
-//   try {
-//     const count = await jobsCollection.countDocuments();
-//     res.json({ totalJobs: count });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
 export const getAllJobs = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 0;
@@ -200,13 +195,13 @@ export const getAllJobs = async (req, res) => {
 
     const currentDateString = currentDate.toISOString().split("T")[0];
     const query = { deadline: { $gte: currentDateString } };
-    const totalJobs = await jobsCollection.countDocuments(query);
+    const totalJobCount = (await jobsCollection.find(query).toArray()).length;
     const cursor = jobsCollection
       .find(query)
       .skip(page * size)
       .limit(size);
-    const result = await cursor.toArray();
-    res.json({ totalJobs, jobs: result });
+    const allJobs = await cursor.toArray();
+    res.send({ allJobs, totalJobCount });
   } catch (error) {
     res.status(500).send("Server Error");
   }
