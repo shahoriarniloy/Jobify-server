@@ -74,7 +74,8 @@ export const postJob = async (req, res) => {
 export const advanceSearch = async (req, res) => {
   const page = parseInt(req.query.page) || 0;
   const size = parseInt(req.query.size) || 10;
-  const currentDateString = new Date().toISOString().split("T")[0];
+  const currentDateString = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD format
+
   const {
     searchTerm,
     location,
@@ -85,46 +86,55 @@ export const advanceSearch = async (req, res) => {
     salaryRange,
   } = req.query;
 
+  // Main query object
   const query = {
-    deadline: { $gte: currentDateString },
+    "jobInfo.deadline": { $gte: currentDateString }, // Ensure deadline is inside jobInfo and greater than or equal to the current date
   };
 
+  // Search by title or company inside jobInfo
   if (searchTerm) {
     query.$or = [
-      { title: { $regex: searchTerm, $options: "i" } },
-      { company: { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.title": { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.company": { $regex: searchTerm, $options: "i" } },
     ];
   }
 
+  // Filter by location
   if (location && location.trim()) {
-    query.location = { $regex: location, $options: "i" };
+    query["jobInfo.location"] = { $regex: location, $options: "i" };
   }
 
+  // Filter by experience
   if (experience && experience.length > 0) {
-    query.experience = { $in: experience.split(",") };
+    query["jobInfo.experience"] = { $in: experience.split(",") };
   }
 
+  // Filter by job type
   if (jobType && jobType.length > 0) {
-    query.jobType = { $in: jobType.split(",") };
+    query["jobInfo.jobType"] = { $in: jobType.split(",") };
   }
 
+  // Filter by education
   if (education && education.length > 0) {
-    query.education = { $in: education.split(",") };
+    query["jobInfo.education"] = { $in: education.split(",") };
   }
 
+  // Filter by job level
   if (jobLevel && jobLevel.length > 0) {
-    query.jobLevel = { $in: jobLevel.split(",") };
+    query["jobInfo.jobLevel"] = { $in: jobLevel.split(",") };
   }
+
+  // Filter by salary range
   if (salaryRange && salaryRange.includes("-")) {
     const [minSalary, maxSalary] = salaryRange
-      .replace(/\$/g, "")
+      .replace(/\$/g, "") // Remove $ symbols
       .split("-")
       .map(Number);
+
     if (!isNaN(minSalary) && !isNaN(maxSalary)) {
-      query.salaryRange = {
-        $regex: `^\\$(${minSalary}|[${
-          minSalary + 1
-        }-${maxSalary}][0-9]*|[1-9][0-9]{2,})-\\$${maxSalary}$`,
+      query["jobInfo.salaryRange"] = {
+        $gte: `$${minSalary}`,
+        $lte: `$${maxSalary}`,
       };
     }
   }
@@ -133,12 +143,14 @@ export const advanceSearch = async (req, res) => {
     const totalJobs = await jobsCollection.countDocuments(query);
 
     const cursor = jobsCollection
-      .find(query ? query : null)
+      .find(query)
       .skip(page * size)
       .limit(size);
+
     const result = await cursor.toArray();
     res.send({ totalJobs, jobs: result });
   } catch (error) {
+    console.error("Error fetching jobs:", error);
     res.status(500).send("Server Error");
   }
 };
