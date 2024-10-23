@@ -4,16 +4,17 @@ import {
   applicationsCollection,
   companiesCollection,
   jobCategory,
-
-  jobCategoryCollection,
-
   jobsCollection,
   reviewsCollection,
   userCollection,
 } from "../Models/database.model.js";
 
-
 // for home page
+
+export const jobCategories = async (req, res) => {
+  const categories = await jobCategory.find({}).toArray();
+  res.status(200).json(categories);
+};
 
 export const homePageInfo = async (req, res) => {
   try {
@@ -21,10 +22,13 @@ export const homePageInfo = async (req, res) => {
     const jobCount = await jobsCollection.countDocuments();
     const companyCount = await companiesCollection.countDocuments();
     const categoryCounts = await jobCategory.find().toArray();
-    const successPeoples = (await applicationsCollection.find({status:"Hired"}).toArray()).length;
-    const candidates = (await userCollection.find({role:"Job Seeker"}).toArray()).length;
+    const successPeoples = (
+      await applicationsCollection.find({ status: "Hired" }).toArray()
+    ).length;
+    const candidates = (
+      await userCollection.find({ role: "Job Seeker" }).toArray()
+    ).length;
     const reviews = await reviewsCollection.find().toArray();
-    
 
     const response = {
       jobCount,
@@ -32,18 +36,14 @@ export const homePageInfo = async (req, res) => {
       categoryCounts,
       successPeoples,
       candidates,
-      reviews
+      reviews,
     };
 
     res.send(response);
-
   } catch (error) {
     res.status(500).send({ message: "Error fetching homepage info" });
   }
 };
-
-
-
 
 export const postJob = async (req, res) => {
   const job = req.body;
@@ -118,8 +118,9 @@ export const advanceSearch = async (req, res) => {
       .map(Number);
     if (!isNaN(minSalary) && !isNaN(maxSalary)) {
       query.salaryRange = {
-        $regex: `^\\$(${minSalary}|[${minSalary + 1
-          }-${maxSalary}][0-9]*|[1-9][0-9]{2,})-\\$${maxSalary}$`,
+        $regex: `^\\$(${minSalary}|[${
+          minSalary + 1
+        }-${maxSalary}][0-9]*|[1-9][0-9]{2,})-\\$${maxSalary}$`,
       };
     }
   }
@@ -461,11 +462,11 @@ export const getAppliedCandidates = async (req, res) => {
       },
       user: user
         ? {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          photoURL: user.photoURL,
-        }
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            photoURL: user.photoURL,
+          }
         : null,
     });
   }

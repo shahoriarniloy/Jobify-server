@@ -319,7 +319,6 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-
 export const checkJobAlreadyApplied = async (req, res) => {
   const email = req.query?.email;
   const jobId = req.query?.jobid;
@@ -700,37 +699,5 @@ export const deleteUser = async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ message: "Server error" });
-  }
-  
-
-
-};
-
-export const getCareerSuggestions = async (req, res) => {
-  try {
-    const skills = req.body.skills || [];
-
-    if (skills.length === 0) {
-      return res.status(400).json({ message: "No skills provided." });
-    }
-
-    const careers = await careersCollection
-      .find({
-        requiredSkills: { $in: skills },
-      })
-      .toArray();
-
-    if (!careers.length) {
-      return res
-        .status(200)
-        .json({ message: "No career suggestions found.", careers: [] });
-    }
-
-    res.status(200).json(careers);
-  } catch (error) {
-    // console.error("Error fetching career suggestions:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching career suggestions.", error });
   }
 };
