@@ -22,8 +22,7 @@ export const createUser = async (req, res) => {
 
 export const getUserRole = async (req, res) => {
   const email = req.query?.email;
-
-  const user = await userCollection.findOne({ email: email });
+  const user = await userCollection.findOne({ email });
   if (user) {
     return res.send(user?.role);
   } else {
