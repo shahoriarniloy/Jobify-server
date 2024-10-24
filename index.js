@@ -38,6 +38,7 @@ app.use(
       "https://jobify-13db1.firebaseapp.com",
       "https://jobify07.netlify.app",
     ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     credentials: true,
   })
 );

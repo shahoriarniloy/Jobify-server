@@ -201,7 +201,7 @@ export const getAllJobs = async (req, res) => {
     const currentDate = new Date();
 
     const currentDateString = currentDate.toISOString().split("T")[0];
-    const query = { deadline: { $gte: currentDateString } };
+    const query = { "jobInfo.deadline": { $gte: currentDateString } };
     const totalJobCount = (await jobsCollection.find(query).toArray()).length;
     const cursor = jobsCollection
       .find(query)
