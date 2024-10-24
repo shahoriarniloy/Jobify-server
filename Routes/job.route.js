@@ -35,7 +35,7 @@ jobRouter.get("/RelatedJobs", RelatedJobs);
 jobRouter.get("/appliedCandidates", getAppliedCandidates);
 jobRouter.get("/jobCategories", jobCategories);
 
-jobRouter.get("/homepage-info",homePageInfo)
+jobRouter.get("/homepage-info", homePageInfo);
 
 // Post Route
 jobRouter.post("/postJob", postJob);

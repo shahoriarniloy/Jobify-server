@@ -9,7 +9,6 @@ import {
   userCollection,
 } from "../Models/database.model.js";
 
-
 // for home page
 
 export const homePageInfo = async (req, res) => {
@@ -18,10 +17,13 @@ export const homePageInfo = async (req, res) => {
     const jobCount = await jobsCollection.countDocuments();
     const companyCount = await companiesCollection.countDocuments();
     const categoryCounts = await jobCategory.find().toArray();
-    const successPeoples = (await applicationsCollection.find({ status: "Hired" }).toArray()).length;
-    const candidates = (await userCollection.find({ role: "Job Seeker" }).toArray()).length;
+    const successPeoples = (
+      await applicationsCollection.find({ status: "Hired" }).toArray()
+    ).length;
+    const candidates = (
+      await userCollection.find({ role: "Job Seeker" }).toArray()
+    ).length;
     const reviews = await reviewsCollection.find().toArray();
-
 
     const response = {
       jobCount,
@@ -29,11 +31,10 @@ export const homePageInfo = async (req, res) => {
       categoryCounts,
       successPeoples,
       candidates,
-      reviews
+      reviews,
     };
 
     res.send(response);
-
   } catch (error) {
     res.status(500).send({ message: "Error fetching homepage info" });
   }
@@ -53,11 +54,20 @@ export const postJob = async (req, res) => {
     { $inc: { count: 1 } }
   );
   const insertedId = result.insertedId;
+
   req.io.emit("jobPosted", {
     jobId: insertedId,
     jobTitle: job.title,
     company: job.company,
   });
+
+  const categoryName = job.jobCategory;
+
+  const categoryCountUpdate = await jobCategoryCollection.updateOne(
+    { name: categoryName },
+    { $inc: { count: 1 } }
+  );
+
   res.status(201).json({ message: "Job posted successfully!", job });
 };
 
@@ -145,9 +155,6 @@ export const advanceSearch = async (req, res) => {
   }
 };
 
-
-
-
 export const searchLocation = async (req, res) => {
   const { searchTerm, location } = req.query;
   const currentDateString = new Date().toISOString().split("T")[0];
@@ -192,8 +199,6 @@ export const getSpecificJob = async (req, res) => {
   }
 };
 
-
-
 export const getAllJobs = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 0;
@@ -208,7 +213,7 @@ export const getAllJobs = async (req, res) => {
       .skip(page * size)
       .limit(size);
     const allJobs = await cursor.toArray();
-    res.send({ allJobs, totalJobCount })
+    res.send({ allJobs, totalJobCount });
   } catch (error) {
     res.status(500).send("Server Error");
   }
@@ -223,9 +228,8 @@ export const applyAJob = async (req, res) => {
   const result = await applicationsCollection.insertOne(application);
   res.send(result);
 };
-export const updateCandidateStatus = async (req, res) => {
-  console.log("Received request body:", req.body);
 
+export const updateCandidateStatus = async (req, res) => {
   const {
     email,
     status,
@@ -237,17 +241,6 @@ export const updateCandidateStatus = async (req, res) => {
     roomId,
   } = req.body;
 
-  console.log("Request Fields:", {
-    email,
-    status,
-    applicationId,
-    name,
-    jobId,
-    interviewDate,
-    interviewTime,
-    roomId,
-  });
-
   if (!email || !status || !applicationId || !name || !jobId) {
     return res.status(400).send({
       message: "Email, status, applicationId, name, and jobId are required.",
@@ -255,7 +248,6 @@ export const updateCandidateStatus = async (req, res) => {
   }
 
   const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
-  console.log("Job found:", job);
 
   if (!job) {
     return res.status(404).send({ message: "Job not found." });
@@ -325,7 +317,7 @@ export const updateCandidateStatus = async (req, res) => {
       message: "Status updated and email sent successfully.",
     });
   } catch (err) {
-    console.error("Error sending email:", err);
+    // console.error("Error sending email:", err);
     return res.status(500).send({
       message: "Status updated, but email failed to send.",
     });
@@ -477,11 +469,11 @@ export const getAppliedCandidates = async (req, res) => {
       },
       user: user
         ? {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          photoURL: user.photoURL,
-        }
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            photoURL: user.photoURL,
+          }
         : null,
     });
   }
