@@ -686,18 +686,126 @@ export const getJobCountsByEmail = async (req, res) => {
   }
 };
 
-export const deleteUser = async (req, res) => {
-  const { email } = req.params;
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await userCollection.find().toArray();
+
+    if (!users.length) {
+      return res.status(404).json({ message: "No users found" });
+    }
+
+    res.status(200).json(users);
+  } catch (error) {
+    console.error("Error fetching:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const getFavoriteCompanies = async (req, res) => {
+  const { userEmail } = req.params;
 
   try {
-    const result = await userCollection.deleteOne({ email: email });
+    const user = await userCollection.findOne({ email: userEmail });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    if (result.deletedCount === 1) {
-      res.status(200).json({ message: "Job seeker deleted successfully." });
-    } else {
-      res.status(404).json({ message: "Job seeker not found." });
+    // If there are no favorite companies
+    if (!user.favoriteCompany || user.favoriteCompany.length === 0) {
+      return res.status(200).json({ favoriteCompanies: [] });
     }
+
+    // return the list of favorite companies
+    return res.status(200).json({ favoriteCompanies: user.favoriteCompany });
   } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const addFavoriteCompany = async (req, res) => {
+  const { companyEmail } = req.body;
+  const { userEmail } = req.params;
+
+  try {
+    // Use findOneAndUpdate for atomic operation
+    const user = await userCollection.findOneAndUpdate(
+      { email: userEmail, favoriteCompany: { $ne: companyEmail } }, // Check that company is not already in favorites
+      { $addToSet: { favoriteCompany: companyEmail } },
+      { new: true } // Return the updated document
+    );
+
+    if (!user)
+      return res
+        .status(404)
+        .json({ message: "User not found or company already in favorite" });
+
+    res.status(200).json({ message: "Company added to favorites" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const deleteFavoriteCompany = async (req, res) => {
+  const { userEmail, companyEmail } = req.params;
+
+  try {
+    const user = await userCollection.findOne({ email: userEmail });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Remove company from favorites
+    await userCollection.updateOne(
+      { email: userEmail },
+      { $pull: { favoriteCompany: companyEmail } }
+    );
+    res.status(200).json({ message: "Company removed from favorites" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "server error" });
+  }
+};
+
+export const checkIsFavorite = async (req, res) => {
+  const { email, companyEmail } = req.params; // Fix destructuring
+
+  try {
+    const user = await userCollection.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Check if the companyEmail is in the user's favoriteCompany array
+    const isFavorite = user.favoriteCompany.includes(companyEmail);
+    res.json({ isFavorite });
+  } catch (error) {
+    console.error("Error checking favorite company:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const getLatestJobsForUser = async (req, res) => {
+  const { userEmail } = req.params; // Fix destructuring
+
+  try {
+    // Fetch the favorite companies first
+    const user = await userCollection.findOne({ email: userEmail });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    // Get the favorite companies
+    const favoriteCompanies = user.favoriteCompany || [];
+
+    // If there are no favorite companies
+    if (favoriteCompanies.length === 0)
+      return res.status(200).json({ jobs: [] }); // No jobs found
+
+    // Fetch the latest jobs from the favorite companies
+    const latestJobs = await jobsCollection
+      .find({ hrEmail: { $in: favoriteCompanies } }) // Filter jobs by hrEmail matching favorite companies
+      .sort({ posted: -1 }) // Sort by posted time in descending order
+      .toArray(); // Convert to array
+
+    return res.status(200).json({ jobs: latestJobs });
+  } catch (error) {
+    console.error(error);
     res.status(500).json({ message: "Server error" });
   }
   
