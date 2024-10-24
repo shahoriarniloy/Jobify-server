@@ -98,40 +98,14 @@ export const searchCompany = async (req, res) => {
 };
 
 export const openPosition = async (req, res) => {
-  try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = parseInt(req.query.limit) || 6;
-    const skip = (page - 1) * limit;
+  const company_email = req.query.email;
+  const query = { "companyInfo.email": company_email };
+  const jobs = await jobsCollection
+    .find(query)
+    .toArray();
 
-    const company_email = req.query.email;
+  res.send(jobs);
 
-    if (!company_email) {
-      return res.status(400).send({ error: "Email parameter is required" });
-    }
-
-    const query = company_email
-      ? {
-          $or: [{ hrEmail: company_email }, { email: company_email }],
-        }
-      : {};
-
-    const jobs = await jobsCollection
-      .find(query)
-      .skip(skip)
-      .limit(limit)
-      .toArray();
-
-    const totalJobs = await jobsCollection.countDocuments(query);
-    const totalPages = Math.ceil(totalJobs / limit);
-
-    if (jobs.length === 0) {
-      return res.status(404).send({ error: "No jobs found" });
-    }
-
-    res.send({ jobs, totalPages });
-  } catch (error) {
-    res.status(500).send({ error: "Internal server error" });
-  }
 };
 
 export const companyInfo = async (req, res) => {

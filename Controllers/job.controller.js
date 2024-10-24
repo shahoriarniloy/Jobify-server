@@ -63,7 +63,7 @@ export const postJob = async (req, res) => {
 
   const categoryName = job.jobCategory;
 
-  const categoryCountUpdate = await jobCategoryCollection.updateOne(
+  await jobCategory.updateOne(
     { name: categoryName },
     { $inc: { count: 1 } }
   );
@@ -249,10 +249,6 @@ export const updateCandidateStatus = async (req, res) => {
 
   const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
 
-  if (!job) {
-    return res.status(404).send({ message: "Job not found." });
-  }
-
   const updateData = { status: status };
 
   if (status === "Interview Scheduled") {
@@ -296,7 +292,7 @@ export const updateCandidateStatus = async (req, res) => {
     return res.status(404).send({ message: "Candidate not found." });
   }
 
-  let emailContent = `Dear ${name},\n\n${job.company} has updated your application status to "${status}" for the ${job.title} position.\n\n`;
+  let emailContent = `Dear ${name},\n\n${job?.companyInfo?.company_name} has updated your application status to "${status}" for the ${job?.jobInfo?.title} position.\n\n`;
 
   if (status === "Interview Scheduled") {
     emailContent += `Your interview is scheduled on ${interviewDate} at ${interviewTime} in Room ID: ${roomId}.\n\n`;
@@ -371,11 +367,9 @@ export const companiesJobs = async (req, res) => {
 export const companiesJobApplication = async (req, res) => {
   const { email } = req.params;
   const jobs = await jobsCollection
-    .find({ $or: [{ email }, { hrEmail: email }] })
+    .find({ "companyInfo.email":email })
     .toArray();
-  if (!jobs.length) {
-    return res.status(404).send("No jobs found for this company");
-  }
+  
   const jobIds = jobs.map((job) => job._id.toString());
   const applications = await applicationsCollection
     .find({ job_id: { $in: jobIds } })
@@ -413,35 +407,19 @@ export const singleJob = async (req, res) => {
 
 export const RelatedJobs = async (req, res) => {
   const jobTitle = req.query.title;
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 6;
-  const skip = (page - 1) * limit;
-
-  const query = jobTitle ? { title: { $regex: jobTitle, $options: "i" } } : {};
+  const query = jobTitle ? { "jobInfo.title": { $regex: jobTitle, $options: "i" } } : {};
 
   const jobs = await jobsCollection
     .find(query)
-    .skip(skip)
-    .limit(limit)
     .toArray();
 
-  const totalJobs = await jobsCollection.countDocuments(query);
-
-  const totalPages = Math.ceil(totalJobs / limit);
-
-  if (jobs.length === 0) {
-    return res.status(404).json({ error: "No job found" });
-  }
-
-  res.send({ jobs, totalPages });
+  res.send(jobs);
 };
 
 export const getAppliedCandidates = async (req, res) => {
   let { job_id } = req.query;
 
   const applications = await applicationsCollection.find({ job_id }).toArray();
-  // console.log("Applications found:", applications);
-
   if (applications.length === 0) {
     return res
       .status(404)
@@ -449,12 +427,10 @@ export const getAppliedCandidates = async (req, res) => {
   }
 
   const userEmails = applications.map((app) => app.user_email);
-  // console.log("User emails collected:", userEmails);
 
   const users = await userCollection
     .find({ email: { $in: userEmails } })
     .toArray();
-  // console.log("Users found:", users);
 
   const response = [];
   for (let i = 0; i < applications.length; i++) {

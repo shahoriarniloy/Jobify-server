@@ -723,7 +723,6 @@ export const getFavoriteCompanies = async (req, res) => {
 export const addFavoriteCompany = async (req, res) => {
   const { companyEmail } = req.body;
   const { userEmail } = req.params;
-
   try {
     // Use findOneAndUpdate for atomic operation
     const user = await userCollection.findOneAndUpdate(
@@ -773,8 +772,8 @@ export const checkIsFavorite = async (req, res) => {
     }
 
     // Check if the companyEmail is in the user's favoriteCompany array
-    const isFavorite = user.favoriteCompany.includes(companyEmail);
-    res.json({ isFavorite });
+    const isFavorite = user?.favoriteCompany?.includes(companyEmail);
+    res.send({ isFavorite });
   } catch (error) {
     console.error("Error checking favorite company:", error);
     res.status(500).json({ message: "Server error" });
