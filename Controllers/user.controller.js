@@ -318,7 +318,6 @@ export const getPost = async (req, res) => {
   res.status(200).json(post);
 };
 
-
 export const checkJobAlreadyApplied = async (req, res) => {
   const email = req.query?.email;
   const jobId = req.query?.jobid;
@@ -724,7 +723,6 @@ export const getFavoriteCompanies = async (req, res) => {
 export const addFavoriteCompany = async (req, res) => {
   const { companyEmail } = req.body;
   const { userEmail } = req.params;
-
   try {
     // Use findOneAndUpdate for atomic operation
     const user = await userCollection.findOneAndUpdate(
@@ -774,8 +772,8 @@ export const checkIsFavorite = async (req, res) => {
     }
 
     // Check if the companyEmail is in the user's favoriteCompany array
-    const isFavorite = user.favoriteCompany.includes(companyEmail);
-    res.json({ isFavorite });
+    const isFavorite = user?.favoriteCompany?.includes(companyEmail);
+    res.send({ isFavorite });
   } catch (error) {
     console.error("Error checking favorite company:", error);
     res.status(500).json({ message: "Server error" });
@@ -799,45 +797,13 @@ export const getLatestJobsForUser = async (req, res) => {
 
     // Fetch the latest jobs from the favorite companies
     const latestJobs = await jobsCollection
-      .find({ hrEmail: { $in: favoriteCompanies } }) // Filter jobs by hrEmail matching favorite companies
-      .sort({ posted: -1 }) // Sort by posted time in descending order
+      .find({ "companyInfo.email": { $in: favoriteCompanies } }) // Filter jobs by hrEmail matching favorite companies
+      .sort({ "companyInfo.posted": -1 }) // Sort by posted time in descending order
       .toArray(); // Convert to array
 
     return res.status(200).json({ jobs: latestJobs });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Server error" });
-  }
-  
-
-
-};
-
-export const getCareerSuggestions = async (req, res) => {
-  try {
-    const skills = req.body.skills || [];
-
-    if (skills.length === 0) {
-      return res.status(400).json({ message: "No skills provided." });
-    }
-
-    const careers = await careersCollection
-      .find({
-        requiredSkills: { $in: skills },
-      })
-      .toArray();
-
-    if (!careers.length) {
-      return res
-        .status(200)
-        .json({ message: "No career suggestions found.", careers: [] });
-    }
-
-    res.status(200).json(careers);
-  } catch (error) {
-    // console.error("Error fetching career suggestions:", error);
-    res
-      .status(500)
-      .json({ message: "Error fetching career suggestions.", error });
   }
 };
