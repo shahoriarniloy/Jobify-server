@@ -57,14 +57,14 @@ export const getCompanies = async (req, res) => {
   }
 };
 
-export const getCountingTotalCompanies = async (req, res) => {
-  try {
-    const count = await companiesCollection.countDocuments();
-    res.json({ totalCompanies: count });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+// export const getCountingTotalCompanies = async (req, res) => {
+//   try {
+//     const count = await companiesCollection.countDocuments();
+//     res.json({ totalCompanies: count });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 export const getSpecificCompany = async (req, res) => {
   const { email } = req.params;
@@ -170,7 +170,7 @@ export const companyInfo = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error("Error saving company info:", error);
+    // console.error("Error saving company info:", error);
     res.status(500).json({
       message: "Failed to save company info",
       error: error.message,
@@ -231,7 +231,7 @@ export const companyFoundingInfo = async (req, res) => {
       });
     }
   } catch (error) {
-    console.error(error);
+    // console.error(error);
     return res.status(500).json({ message: "Error saving company info" });
   }
 };
@@ -262,7 +262,7 @@ export const companySocialInfo = async (req, res) => {
       .status(200)
       .json({ message: "Social media links saved successfully", result });
   } catch (error) {
-    console.error("Error saving social media links:", error);
+    // console.error("Error saving social media links:", error);
     res.status(500).json({ message: "Error saving social media links", error });
   }
 };
@@ -299,7 +299,7 @@ export const companyAccountInfo = async (req, res) => {
       .status(200)
       .json({ message: "Account information updated successfully", result });
   } catch (error) {
-    console.error("Error updating account information:", error);
+    // console.error("Error updating account information:", error);
     res
       .status(500)
       .json({ message: "Error updating account information", error });
