@@ -29,15 +29,12 @@ import {
   getResumeByEmail,
   createOrUpdateResume,
   getJobCountsByEmail,
-
   getFavoriteCompanies,
   addFavoriteCompany,
   deleteFavoriteCompany,
   getAllUsers,
   checkIsFavorite,
   getLatestJobsForUser,
-
-  deleteUser,
   getCareerSuggestions,
 } from "../Controllers/user.controller.js";
 import { jobCategories } from "../Controllers/job.controller.js";

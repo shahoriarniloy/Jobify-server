@@ -798,8 +798,8 @@ export const getLatestJobsForUser = async (req, res) => {
 
     // Fetch the latest jobs from the favorite companies
     const latestJobs = await jobsCollection
-      .find({ hrEmail: { $in: favoriteCompanies } }) // Filter jobs by hrEmail matching favorite companies
-      .sort({ posted: -1 }) // Sort by posted time in descending order
+      .find({ "companyInfo.email": { $in: favoriteCompanies } }) // Filter jobs by hrEmail matching favorite companies
+      .sort({ "companyInfo.posted": -1 }) // Sort by posted time in descending order
       .toArray(); // Convert to array
 
     return res.status(200).json({ jobs: latestJobs });
