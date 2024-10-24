@@ -155,23 +155,55 @@ export const advanceSearch = async (req, res) => {
   }
 };
 
+// export const searchLocation = async (req, res) => {
+//   const { searchTerm, location } = req.query;
+//   const currentDateString = new Date().toISOString().split("T")[0];
+
+//   const query = {
+//     deadline: { $gte: currentDateString },
+//   };
+
+//   if (searchTerm) {
+//     query.$or = [
+//       { title: { $regex: searchTerm, $options: "i" } },
+//       { company: { $regex: searchTerm, $options: "i" } },
+//     ];
+//   }
+
+//   if (location) {
+//     query.location = { $regex: location, $options: "i" };
+//   }
+
+//   try {
+//     if (!searchTerm && !location) {
+//       return res.json([]);
+//     }
+
+//     const result = await jobsCollection.find(query).toArray();
+//     res.send(result);
+//   } catch (error) {
+//     res.status(500).send("Server Error");
+//   }
+// };
+
+
 export const searchLocation = async (req, res) => {
   const { searchTerm, location } = req.query;
   const currentDateString = new Date().toISOString().split("T")[0];
 
   const query = {
-    deadline: { $gte: currentDateString },
+    "jobInfo.deadline": { $gte: currentDateString },
   };
 
   if (searchTerm) {
     query.$or = [
-      { title: { $regex: searchTerm, $options: "i" } },
-      { company: { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.title": { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.company": { $regex: searchTerm, $options: "i" } },
     ];
   }
 
   if (location) {
-    query.location = { $regex: location, $options: "i" };
+    query["jobInfo.location"] = { $regex: location, $options: "i" };
   }
 
   try {
@@ -185,6 +217,7 @@ export const searchLocation = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
+
 
 export const getSpecificJob = async (req, res) => {
   const { id } = req.params;
