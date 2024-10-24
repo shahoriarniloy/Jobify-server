@@ -4,14 +4,10 @@ import {
   applicationsCollection,
   companiesCollection,
   jobCategory,
-
-  jobCategoryCollection,
-
   jobsCollection,
   reviewsCollection,
   userCollection,
 } from "../Models/database.model.js";
-
 
 // for home page
 
@@ -21,10 +17,13 @@ export const homePageInfo = async (req, res) => {
     const jobCount = await jobsCollection.countDocuments();
     const companyCount = await companiesCollection.countDocuments();
     const categoryCounts = await jobCategory.find().toArray();
-    const successPeoples = (await applicationsCollection.find({status:"Hired"}).toArray()).length;
-    const candidates = (await userCollection.find({role:"Job Seeker"}).toArray()).length;
+    const successPeoples = (
+      await applicationsCollection.find({ status: "Hired" }).toArray()
+    ).length;
+    const candidates = (
+      await userCollection.find({ role: "Job Seeker" }).toArray()
+    ).length;
     const reviews = await reviewsCollection.find().toArray();
-    
 
     const response = {
       jobCount,
@@ -32,23 +31,28 @@ export const homePageInfo = async (req, res) => {
       categoryCounts,
       successPeoples,
       candidates,
-      reviews
+      reviews,
     };
 
     res.send(response);
-
   } catch (error) {
     res.status(500).send({ message: "Error fetching homepage info" });
   }
 };
 
-
-
+export const jobCategories = async (req, res) => {
+  const categories = await jobCategory.find().toArray();
+  res.send(categories);
+};
 
 export const postJob = async (req, res) => {
   const job = req.body;
-
+  const jobCategoryName = job?.jobInfo?.jobCategory;
   const result = await jobsCollection.insertOne(job);
+  await jobCategory.updateOne(
+    { name: jobCategoryName },
+    { $inc: { count: 1 } }
+  );
   const insertedId = result.insertedId;
 
   req.io.emit("jobPosted", {
@@ -59,7 +63,7 @@ export const postJob = async (req, res) => {
 
   const categoryName = job.jobCategory;
 
-  const categoryCountUpdate = await jobCategoryCollection.updateOne(
+  await jobCategory.updateOne(
     { name: categoryName },
     { $inc: { count: 1 } }
   );
@@ -70,7 +74,8 @@ export const postJob = async (req, res) => {
 export const advanceSearch = async (req, res) => {
   const page = parseInt(req.query.page) || 0;
   const size = parseInt(req.query.size) || 10;
-  const currentDateString = new Date().toISOString().split("T")[0];
+  const currentDateString = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD format
+
   const {
     searchTerm,
     location,
@@ -81,45 +86,55 @@ export const advanceSearch = async (req, res) => {
     salaryRange,
   } = req.query;
 
+  // Main query object
   const query = {
-    deadline: { $gte: currentDateString },
+    "jobInfo.deadline": { $gte: currentDateString }, // Ensure deadline is inside jobInfo and greater than or equal to the current date
   };
 
+  // Search by title or company inside jobInfo
   if (searchTerm) {
     query.$or = [
-      { title: { $regex: searchTerm, $options: "i" } },
-      { company: { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.title": { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.company": { $regex: searchTerm, $options: "i" } },
     ];
   }
 
+  // Filter by location
   if (location && location.trim()) {
-    query.location = { $regex: location, $options: "i" };
+    query["jobInfo.location"] = { $regex: location, $options: "i" };
   }
 
+  // Filter by experience
   if (experience && experience.length > 0) {
-    query.experience = { $in: experience.split(",") };
+    query["jobInfo.experience"] = { $in: experience.split(",") };
   }
 
+  // Filter by job type
   if (jobType && jobType.length > 0) {
-    query.jobType = { $in: jobType.split(",") };
+    query["jobInfo.jobType"] = { $in: jobType.split(",") };
   }
 
+  // Filter by education
   if (education && education.length > 0) {
-    query.education = { $in: education.split(",") };
+    query["jobInfo.education"] = { $in: education.split(",") };
   }
 
+  // Filter by job level
   if (jobLevel && jobLevel.length > 0) {
-    query.jobLevel = { $in: jobLevel.split(",") };
+    query["jobInfo.jobLevel"] = { $in: jobLevel.split(",") };
   }
+
+  // Filter by salary range
   if (salaryRange && salaryRange.includes("-")) {
     const [minSalary, maxSalary] = salaryRange
-      .replace(/\$/g, "")
+      .replace(/\$/g, "") // Remove $ symbols
       .split("-")
       .map(Number);
+
     if (!isNaN(minSalary) && !isNaN(maxSalary)) {
-      query.salaryRange = {
-        $regex: `^\\$(${minSalary}|[${minSalary + 1
-          }-${maxSalary}][0-9]*|[1-9][0-9]{2,})-\\$${maxSalary}$`,
+      query["jobInfo.salaryRange"] = {
+        $gte: `$${minSalary}`,
+        $lte: `$${maxSalary}`,
       };
     }
   }
@@ -131,9 +146,11 @@ export const advanceSearch = async (req, res) => {
       .find(query)
       .skip(page * size)
       .limit(size);
+
     const result = await cursor.toArray();
-    res.json({ totalJobs, jobs: result });
+    res.send({ totalJobs, jobs: result });
   } catch (error) {
+    console.error("Error fetching jobs:", error);
     res.status(500).send("Server Error");
   }
 };
@@ -182,15 +199,6 @@ export const getSpecificJob = async (req, res) => {
   }
 };
 
-// export const getAllJobsCounts = async (req, res) => {
-//   try {
-//     const count = await jobsCollection.countDocuments();
-//     res.json({ totalJobs: count });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
 export const getAllJobs = async (req, res) => {
   try {
     const page = parseInt(req.query.page) || 0;
@@ -198,14 +206,14 @@ export const getAllJobs = async (req, res) => {
     const currentDate = new Date();
 
     const currentDateString = currentDate.toISOString().split("T")[0];
-    const query = { deadline: { $gte: currentDateString } };
-    const totalJobs = await jobsCollection.countDocuments(query);
+    const query = { "jobInfo.deadline": { $gte: currentDateString } };
+    const totalJobCount = (await jobsCollection.find(query).toArray()).length;
     const cursor = jobsCollection
       .find(query)
       .skip(page * size)
       .limit(size);
-    const result = await cursor.toArray();
-    res.json({ totalJobs, jobs: result });
+    const allJobs = await cursor.toArray();
+    res.send({ allJobs, totalJobCount });
   } catch (error) {
     res.status(500).send("Server Error");
   }
@@ -240,10 +248,6 @@ export const updateCandidateStatus = async (req, res) => {
   }
 
   const job = await jobsCollection.findOne({ _id: new ObjectId(jobId) });
-
-  if (!job) {
-    return res.status(404).send({ message: "Job not found." });
-  }
 
   const updateData = { status: status };
 
@@ -288,7 +292,7 @@ export const updateCandidateStatus = async (req, res) => {
     return res.status(404).send({ message: "Candidate not found." });
   }
 
-  let emailContent = `Dear ${name},\n\n${job.company} has updated your application status to "${status}" for the ${job.title} position.\n\n`;
+  let emailContent = `Dear ${name},\n\n${job?.companyInfo?.company_name} has updated your application status to "${status}" for the ${job?.jobInfo?.title} position.\n\n`;
 
   if (status === "Interview Scheduled") {
     emailContent += `Your interview is scheduled on ${interviewDate} at ${interviewTime} in Room ID: ${roomId}.\n\n`;
@@ -363,11 +367,9 @@ export const companiesJobs = async (req, res) => {
 export const companiesJobApplication = async (req, res) => {
   const { email } = req.params;
   const jobs = await jobsCollection
-    .find({ $or: [{ email }, { hrEmail: email }] })
+    .find({ "companyInfo.email":email })
     .toArray();
-  if (!jobs.length) {
-    return res.status(404).send("No jobs found for this company");
-  }
+  
   const jobIds = jobs.map((job) => job._id.toString());
   const applications = await applicationsCollection
     .find({ job_id: { $in: jobIds } })
@@ -405,35 +407,19 @@ export const singleJob = async (req, res) => {
 
 export const RelatedJobs = async (req, res) => {
   const jobTitle = req.query.title;
-  const page = parseInt(req.query.page) || 1;
-  const limit = parseInt(req.query.limit) || 6;
-  const skip = (page - 1) * limit;
-
-  const query = jobTitle ? { title: { $regex: jobTitle, $options: "i" } } : {};
+  const query = jobTitle ? { "jobInfo.title": { $regex: jobTitle, $options: "i" } } : {};
 
   const jobs = await jobsCollection
     .find(query)
-    .skip(skip)
-    .limit(limit)
     .toArray();
 
-  const totalJobs = await jobsCollection.countDocuments(query);
-
-  const totalPages = Math.ceil(totalJobs / limit);
-
-  if (jobs.length === 0) {
-    return res.status(404).json({ error: "No job found" });
-  }
-
-  res.send({ jobs, totalPages });
+  res.send(jobs);
 };
 
 export const getAppliedCandidates = async (req, res) => {
   let { job_id } = req.query;
 
   const applications = await applicationsCollection.find({ job_id }).toArray();
-  // console.log("Applications found:", applications);
-
   if (applications.length === 0) {
     return res
       .status(404)
@@ -441,12 +427,10 @@ export const getAppliedCandidates = async (req, res) => {
   }
 
   const userEmails = applications.map((app) => app.user_email);
-  // console.log("User emails collected:", userEmails);
 
   const users = await userCollection
     .find({ email: { $in: userEmails } })
     .toArray();
-  // console.log("Users found:", users);
 
   const response = [];
   for (let i = 0; i < applications.length; i++) {
@@ -461,11 +445,11 @@ export const getAppliedCandidates = async (req, res) => {
       },
       user: user
         ? {
-          _id: user._id,
-          name: user.name,
-          email: user.email,
-          photoURL: user.photoURL,
-        }
+            _id: user._id,
+            name: user.name,
+            email: user.email,
+            photoURL: user.photoURL,
+          }
         : null,
     });
   }
