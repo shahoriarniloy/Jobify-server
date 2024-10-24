@@ -5,7 +5,7 @@ import {
   companiesCollection,
   jobCategory,
 
-  jobCategoryCollection,
+  // jobCategoryCollection,
 
   jobsCollection,
   reviewsCollection,
@@ -43,6 +43,11 @@ export const homePageInfo = async (req, res) => {
 };
 
 
+
+export const jobCategories = async (req, res) => {
+  const categories = await jobCategory.find().toArray();
+  res.send(categories);
+};
 
 
 export const postJob = async (req, res) => {

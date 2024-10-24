@@ -15,6 +15,7 @@ import {
   updateCandidateStatus,
   postJob,
   homePageInfo,
+  jobCategories,
 } from "../Controllers/job.controller.js";
 
 const jobRouter = express.Router();
@@ -32,8 +33,9 @@ jobRouter.get("/jobs/dashboard/company/:email", companiesJobApplication);
 jobRouter.get("/single-job/:id", singleJob);
 jobRouter.get("/RelatedJobs", RelatedJobs);
 jobRouter.get("/appliedCandidates", getAppliedCandidates);
+jobRouter.get("/jobCategories", jobCategories);
 
-jobRouter.get("/homepage-info",homePageInfo)
+jobRouter.get("/homepage-info", homePageInfo);
 
 // Post Route
 jobRouter.post("/postJob", postJob);
