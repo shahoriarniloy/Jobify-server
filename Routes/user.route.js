@@ -3,7 +3,8 @@ import {
   checkJobAlreadyApplied,
   checkAppliedJobs,
   searchJobSeekers,
-  createUser,
+  createEmployeeAccount,
+  createCompanyAccount,
   createUserBookmark,
   deleteUserBookmark,
   getMessage,
@@ -36,6 +37,8 @@ import {
   checkIsFavorite,
   getLatestJobsForUser,
   getCareerSuggestions,
+  postMassage,
+  getAllMessage,
 } from "../Controllers/user.controller.js";
 import { jobCategories } from "../Controllers/job.controller.js";
 const userRouter = express.Router();
@@ -61,9 +64,16 @@ userRouter.get("/users/:userEmail/favorite-company", getFavoriteCompanies);
 userRouter.get("/users/:email/favorite-company/:companyEmail", checkIsFavorite);
 userRouter.get("/users/:userEmail/latest-jobs", getLatestJobsForUser);
 userRouter.get("/jobCategories", jobCategories);
+userRouter.get("/get-all-message",getAllMessage)
+
+
 
 // Post Route
-userRouter.post("/users", createUser);
+// create employee account
+userRouter.post("/create-employee-account", createEmployeeAccount);
+// carate company account
+userRouter.post("/create-company-account", createCompanyAccount);
+
 userRouter.post("/bookmarks", createUserBookmark);
 userRouter.post("/reviews", postReview);
 userRouter.post("/sendMessage", sendMessage);
@@ -74,6 +84,8 @@ userRouter.post("/profile-updating", postProfileSettings);
 userRouter.post("/createOrUpdateResume", createOrUpdateResume);
 userRouter.post("/users/:userEmail/favorite-company", addFavoriteCompany);
 userRouter.post("/getCareerSuggestions", getCareerSuggestions);
+
+userRouter.post("/send-massage",postMassage)
 
 // Delete Route
 userRouter.delete("/unfollow-job-seeker", unfollowJobSeeker);
