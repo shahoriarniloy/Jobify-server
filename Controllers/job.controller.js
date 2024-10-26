@@ -9,11 +9,8 @@ import {
   userCollection,
 } from "../Models/database.model.js";
 
-// for home page
-
 export const homePageInfo = async (req, res) => {
   try {
-    // Count the total number of jobs and companies
     const jobCount = await jobsCollection.countDocuments();
     const companyCount = await companiesCollection.countDocuments();
     const categoryCounts = await jobCategory.find().toArray();
