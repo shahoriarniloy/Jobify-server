@@ -104,8 +104,6 @@ export const checkFollowStatus = async (req, res) => {
       followed: followedEmail,
     });
 
-    // console.log("Existing Follow:", existingFollow);
-
     res.status(200).json({ hasFollowed: !!existingFollow });
   } catch (error) {
     // console.error("Error checking follow status:", error);
@@ -613,8 +611,6 @@ export const createOrUpdateResume = async (req, res) => {
 
     if (existingResume) {
       const { _id, ...updateData } = resumeData;
-      // console.log(resumeData);
-
       const updatedResume = await resumesCollection.findOneAndUpdate(
         { email },
         { $set: updateData },
@@ -671,8 +667,6 @@ export const getCareerSuggestions = async (req, res) => {
 
 export const getJobCountsByEmail = async (req, res) => {
   const { email } = req.params;
-  // console.log(email);
-
   try {
     const appliedJobsCount = await applicationsCollection.countDocuments({
       user_email: email,
@@ -819,19 +813,22 @@ export const getLatestJobsForUser = async (req, res) => {
 
 export const postMassage = async (req, res) => {
   const { senderId, receiverId } = req.query;
-  const message = req.body;
+  const { massage ,smsSender} = req.body;
   const user = await userCollection.findOne({ email: senderId });
-  const company = await userCollection.findOne({ email: receiverId });
-  console.log(company);
+
+  const company = await companiesCollection.findOne({ email: receiverId });
   const conversation = await messagesCollection.findOne({
-    sender: senderId,
-    receiver: receiverId,
+    $or: [
+      { sender: senderId, receiver: receiverId },
+      { sender: receiverId, receiver: senderId }
+    ]
+
   });
   if (!senderId || !receiverId) {
     return res.status(404).json({ error: "Sender or receiver not found" });
   }
   if (conversation) {
-    conversation.messages.push({ sent: message, timestamp: new Date() });
+    conversation.messages.push({ massage, timestamp: new Date(), sender: smsSender });
     const update = await messagesCollection.updateOne(
       { _id: conversation._id },
       { $set: { messages: conversation.messages } }
@@ -840,15 +837,17 @@ export const postMassage = async (req, res) => {
   } else {
     const newConversation = {
       sender: senderId,
-      senderName: user.name,
+      senderName: user?.name,
       receiver: receiverId,
-      receiverName: company.name,
+      receiverName: company?.company_name,
+
       senderImg: user?.photoURL,
-      receiverImg: company?.photoURL,
+      receiverImg: company?.company_logo,
       messages: [
         {
-          sent: message,
+          massage,
           timestamp: new Date(),
+          sender: smsSender
         },
       ],
       createdAt: new Date(),
