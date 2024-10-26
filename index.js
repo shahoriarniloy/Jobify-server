@@ -70,6 +70,9 @@ io.on("connection", (socket) => {
     removeUser(socket.id);
 
   });
+  socket.on("sendMessage", (data) => {
+    io.emit("receiveMessage", data); // Broadcast message to all connected clients
+  });
 });
 
 const transporter = nodemailer.createTransport({

@@ -813,7 +813,7 @@ export const getLatestJobsForUser = async (req, res) => {
 
 export const postMassage = async (req, res) => {
   const { senderId, receiverId } = req.query;
-  const { massage ,smsSender} = req.body;
+  const { massage, smsSender } = req.body;
   const user = await userCollection.findOne({ email: senderId });
   const company = await companiesCollection.findOne({ email: receiverId });
   const conversation = await messagesCollection.findOne({
@@ -850,6 +850,13 @@ export const postMassage = async (req, res) => {
       createdAt: new Date(),
     };
     const result = await messagesCollection.insertOne(newConversation);
+    req.io.emit("newMessage", {
+      senderId,
+      receiverId,
+      massage,
+      smsSender,
+      timestamp: new Date(),
+    });
     res.send(result)
   }
 
