@@ -27,12 +27,12 @@ export const createCompanyAccount = async (req, res) => {
 export const getUserRole = async (req, res) => {
   const email = req.query?.email;
   const user = await userCollection.findOne({ email });
-  const company = await companiesCollection.findOne({email});
-  console.log(user, company)
+  const company = await companiesCollection.findOne({ email });
+
   if (user) {
     return res.send(user?.role);
   } else {
-    return res.send(user?.role);
+    return res.send(company?.role);
   }
 };
 
@@ -544,6 +544,7 @@ export const postProfileSettings = async (req, res) => {
 export const postUserInfo = async (req, res) => {
   try {
     const { about, phone, photoUrl, email, socialLinks } = req.body;
+    console.log(req.body);
 
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
@@ -814,8 +815,6 @@ export const getLatestJobsForUser = async (req, res) => {
   }
 };
 
-
-
 // post massage
 
 export const postMassage = async (req, res) => {
@@ -823,8 +822,11 @@ export const postMassage = async (req, res) => {
   const message = req.body;
   const user = await userCollection.findOne({ email: senderId });
   const company = await userCollection.findOne({ email: receiverId });
-  console.log(company)
-  const conversation = await messagesCollection.findOne({ sender: senderId, receiver: receiverId });
+  console.log(company);
+  const conversation = await messagesCollection.findOne({
+    sender: senderId,
+    receiver: receiverId,
+  });
   if (!senderId || !receiverId) {
     return res.status(404).json({ error: "Sender or receiver not found" });
   }
@@ -834,13 +836,13 @@ export const postMassage = async (req, res) => {
       { _id: conversation._id },
       { $set: { messages: conversation.messages } }
     );
-    res.send(update)
+    res.send(update);
   } else {
     const newConversation = {
       sender: senderId,
-      senderName:user.name,
+      senderName: user.name,
       receiver: receiverId,
-      receiverName:company.name,
+      receiverName: company.name,
       senderImg: user?.photoURL,
       receiverImg: company?.photoURL,
       messages: [
@@ -852,16 +854,17 @@ export const postMassage = async (req, res) => {
       createdAt: new Date(),
     };
     const result = await messagesCollection.insertOne(newConversation);
-    res.send(result)
+    res.send(result);
   }
-
-}
+};
 
 export const getAllMessage = async (req, res) => {
   const senderId = req?.query?.senderId;
 
-  const result = await messagesCollection.find({
-    $or: [{ sender: senderId }, { receiver: senderId }]
-  }).toArray();
-  res.send(result)
-}
+  const result = await messagesCollection
+    .find({
+      $or: [{ sender: senderId }, { receiver: senderId }],
+    })
+    .toArray();
+  res.send(result);
+};
