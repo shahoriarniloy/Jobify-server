@@ -9,11 +9,8 @@ import {
   userCollection,
 } from "../Models/database.model.js";
 
-// for home page
-
 export const homePageInfo = async (req, res) => {
   try {
-    // Count the total number of jobs and companies
     const jobCount = await jobsCollection.countDocuments();
     const companyCount = await companiesCollection.countDocuments();
     const categoryCounts = await jobCategory.find().toArray();
@@ -63,10 +60,7 @@ export const postJob = async (req, res) => {
 
   const categoryName = job.jobCategory;
 
-  await jobCategory.updateOne(
-    { name: categoryName },
-    { $inc: { count: 1 } }
-  );
+  await jobCategory.updateOne({ name: categoryName }, { $inc: { count: 1 } });
 
   res.status(201).json({ message: "Job posted successfully!", job });
 };
@@ -400,9 +394,9 @@ export const companiesJobs = async (req, res) => {
 export const companiesJobApplication = async (req, res) => {
   const { email } = req.params;
   const jobs = await jobsCollection
-    .find({ "companyInfo.email":email })
+    .find({ "companyInfo.email": email })
     .toArray();
-  
+
   const jobIds = jobs.map((job) => job._id.toString());
   const applications = await applicationsCollection
     .find({ job_id: { $in: jobIds } })
@@ -440,11 +434,11 @@ export const singleJob = async (req, res) => {
 
 export const RelatedJobs = async (req, res) => {
   const jobTitle = req.query.title;
-  const query = jobTitle ? { "jobInfo.title": { $regex: jobTitle, $options: "i" } } : {};
+  const query = jobTitle
+    ? { "jobInfo.title": { $regex: jobTitle, $options: "i" } }
+    : {};
 
-  const jobs = await jobsCollection
-    .find(query)
-    .toArray();
+  const jobs = await jobsCollection.find(query).toArray();
 
   res.send(jobs);
 };
