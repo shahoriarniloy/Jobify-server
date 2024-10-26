@@ -180,6 +180,7 @@ export const advanceSearch = async (req, res) => {
 //   }
 // };
 
+
 export const searchLocation = async (req, res) => {
   const { searchTerm, location } = req.query;
   const currentDateString = new Date().toISOString().split("T")[0];
@@ -210,6 +211,7 @@ export const searchLocation = async (req, res) => {
     res.status(500).send("Server Error");
   }
 };
+
 
 export const getSpecificJob = async (req, res) => {
   const { id } = req.params;
