@@ -13,20 +13,26 @@ import {
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
 
-export const createUser = async (req, res) => {
+export const createEmployeeAccount = async (req, res) => {
   const user = req.body;
-  const query = { email: user.email };
   const result = await userCollection.insertOne(user);
+  res.send(result);
+};
+export const createCompanyAccount = async (req, res) => {
+  const user = req.body;
+  const result = await companiesCollection.insertOne(user);
   res.send(result);
 };
 
 export const getUserRole = async (req, res) => {
   const email = req.query?.email;
   const user = await userCollection.findOne({ email });
+  const company = await companiesCollection.findOne({email});
+  console.log(user, company)
   if (user) {
     return res.send(user?.role);
   } else {
-    return res.status(404).send({ message: "User not found" });
+    return res.send(user?.role);
   }
 };
 
@@ -807,3 +813,55 @@ export const getLatestJobsForUser = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+
+
+// post massage
+
+export const postMassage = async (req, res) => {
+  const { senderId, receiverId } = req.query;
+  const message = req.body;
+  const user = await userCollection.findOne({ email: senderId });
+  const company = await userCollection.findOne({ email: receiverId });
+  console.log(company)
+  const conversation = await messagesCollection.findOne({ sender: senderId, receiver: receiverId });
+  if (!senderId || !receiverId) {
+    return res.status(404).json({ error: "Sender or receiver not found" });
+  }
+  if (conversation) {
+    conversation.messages.push({ sent: message, timestamp: new Date() });
+    const update = await messagesCollection.updateOne(
+      { _id: conversation._id },
+      { $set: { messages: conversation.messages } }
+    );
+    res.send(update)
+  } else {
+    const newConversation = {
+      sender: senderId,
+      senderName:user.name,
+      receiver: receiverId,
+      receiverName:company.name,
+      senderImg: user?.photoURL,
+      receiverImg: company?.photoURL,
+      messages: [
+        {
+          sent: message,
+          timestamp: new Date(),
+        },
+      ],
+      createdAt: new Date(),
+    };
+    const result = await messagesCollection.insertOne(newConversation);
+    res.send(result)
+  }
+
+}
+
+export const getAllMessage = async (req, res) => {
+  const senderId = req?.query?.senderId;
+
+  const result = await messagesCollection.find({
+    $or: [{ sender: senderId }, { receiver: senderId }]
+  }).toArray();
+  res.send(result)
+}
