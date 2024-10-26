@@ -538,6 +538,7 @@ export const postProfileSettings = async (req, res) => {
 export const postUserInfo = async (req, res) => {
   try {
     const { about, phone, photoUrl, email, socialLinks } = req.body;
+    console.log(req.body);
 
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
