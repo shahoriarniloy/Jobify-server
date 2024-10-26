@@ -28,10 +28,11 @@ export const getUserRole = async (req, res) => {
   const email = req.query?.email;
   const user = await userCollection.findOne({ email });
   const company = await companiesCollection.findOne({ email });
+
   if (user) {
     return res.send(user?.role);
   } else {
-    return res.send(user?.role);
+    return res.send(company?.role);
   }
 };
 
@@ -541,6 +542,7 @@ export const postProfileSettings = async (req, res) => {
 export const postUserInfo = async (req, res) => {
   try {
     const { about, phone, photoUrl, email, socialLinks } = req.body;
+    console.log(req.body);
 
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
@@ -807,20 +809,20 @@ export const getLatestJobsForUser = async (req, res) => {
   }
 };
 
-
-
 // post massage
 
 export const postMassage = async (req, res) => {
   const { senderId, receiverId } = req.query;
   const { massage, smsSender } = req.body;
   const user = await userCollection.findOne({ email: senderId });
+
   const company = await companiesCollection.findOne({ email: receiverId });
   const conversation = await messagesCollection.findOne({
     $or: [
       { sender: senderId, receiver: receiverId },
       { sender: receiverId, receiver: senderId }
     ]
+
   });
   if (!senderId || !receiverId) {
     return res.status(404).json({ error: "Sender or receiver not found" });
@@ -831,13 +833,14 @@ export const postMassage = async (req, res) => {
       { _id: conversation._id },
       { $set: { messages: conversation.messages } }
     );
-    res.send(update)
+    res.send(update);
   } else {
     const newConversation = {
       sender: senderId,
       senderName: user?.name,
       receiver: receiverId,
       receiverName: company?.company_name,
+
       senderImg: user?.photoURL,
       receiverImg: company?.company_logo,
       messages: [
@@ -858,15 +861,17 @@ export const postMassage = async (req, res) => {
       timestamp: new Date(),
     });
     res.send(result)
-  }
 
-}
+  }
+};
 
 export const getAllMessage = async (req, res) => {
   const senderId = req?.query?.senderId;
 
-  const result = await messagesCollection.find({
-    $or: [{ sender: senderId }, { receiver: senderId }]
-  }).toArray();
-  res.send(result)
-}
+  const result = await messagesCollection
+    .find({
+      $or: [{ sender: senderId }, { receiver: senderId }],
+    })
+    .toArray();
+  res.send(result);
+};
