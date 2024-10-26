@@ -100,12 +100,9 @@ export const searchCompany = async (req, res) => {
 export const openPosition = async (req, res) => {
   const company_email = req.query.email;
   const query = { "companyInfo.email": company_email };
-  const jobs = await jobsCollection
-    .find(query)
-    .toArray();
+  const jobs = await jobsCollection.find(query).toArray();
 
   res.send(jobs);
-
 };
 
 export const companyInfo = async (req, res) => {
@@ -242,13 +239,14 @@ export const companySocialInfo = async (req, res) => {
 };
 
 export const companyAccountInfo = async (req, res) => {
-  const { email, phone, location } = req.body;
+  const { email, phone, formattedLocation } = req.body;
 
-  if (!email || !phone || !location) {
+  if (!email || !phone || !formattedLocation) {
     return res
       .status(400)
       .json({ message: "Email and phone number are required" });
   }
+  console.log(formattedLocation);
 
   try {
     const existingUser = await companiesCollection.findOne({ email: email });
@@ -259,7 +257,7 @@ export const companyAccountInfo = async (req, res) => {
 
     const result = await companiesCollection.updateOne(
       { email: email },
-      { $set: { phone: phone, location: location } },
+      { $set: { phone: phone, location: formattedLocation } },
       { upsert: false }
     );
 
