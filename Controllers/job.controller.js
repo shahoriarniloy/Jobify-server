@@ -4,12 +4,6 @@ import {
   applicationsCollection,
   companiesCollection,
   jobCategory,
-<<<<<<< HEAD
-
-  // jobCategoryCollection,
-
-=======
->>>>>>> 86b9f51ae21d72781eb6fc348f24575fa0d942db
   jobsCollection,
   reviewsCollection,
   userCollection,
