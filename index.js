@@ -13,35 +13,27 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const server = createServer(app);
+const corsAccess = {
+  origin: [
+    "http://localhost:5173",
+    "http://localhost:5174",
+    "https://jobify-13db1.web.app",
+    "https://jobify-13db1.firebaseapp.com",
+    "https://jobify07.netlify.app",
+    "https://jobi-fy.web.app/"
+  ],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  credentials: true,
+}
 
 const io = new Server(server, {
-  cors: {
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://jobify-13db1.web.app",
-      "https://jobify-13db1.firebaseapp.com",
-      "https://jobify07.netlify.app",
-    ],
-    credentials: true,
-  },
+  cors: corsAccess
 });
 
 
 
 app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "https://jobify-13db1.web.app",
-      "https://jobify-13db1.firebaseapp.com",
-      "https://jobify07.netlify.app",
-      "https://jobi-fy.web.app/"
-    ],
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
-    credentials: true,
-  })
+  cors(corsAccess)
 );
 app.use((req, res, next) => {
   req.io = io;
