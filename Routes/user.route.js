@@ -39,6 +39,13 @@ import {
   getCareerSuggestions,
   postMassage,
   getAllMessage,
+  getFollowers,
+  getFollowing,
+  getMutualConnections,
+  suggestJobSeekers,
+  getOwnPosts,
+  deletePost,
+  removeFollower,
 } from "../Controllers/user.controller.js";
 import { jobCategories } from "../Controllers/job.controller.js";
 const userRouter = express.Router();
@@ -64,9 +71,12 @@ userRouter.get("/users/:userEmail/favorite-company", getFavoriteCompanies);
 userRouter.get("/users/:email/favorite-company/:companyEmail", checkIsFavorite);
 userRouter.get("/users/:userEmail/latest-jobs", getLatestJobsForUser);
 userRouter.get("/jobCategories", jobCategories);
-userRouter.get("/get-all-message",getAllMessage)
-
-
+userRouter.get("/get-all-message", getAllMessage);
+userRouter.get("/users/followers/:userEmail", getFollowers);
+userRouter.get("/users/following/:userEmail", getFollowing);
+userRouter.get("/users/mutual-connections/:userEmail", getMutualConnections);
+userRouter.get("/users/suggestions/:userEmail", suggestJobSeekers);
+userRouter.get("/ownPosts/:userEmail", getOwnPosts);
 
 // Post Route
 // create employee account
@@ -85,7 +95,7 @@ userRouter.post("/createOrUpdateResume", createOrUpdateResume);
 userRouter.post("/users/:userEmail/favorite-company", addFavoriteCompany);
 userRouter.post("/getCareerSuggestions", getCareerSuggestions);
 
-userRouter.post("/send-massage",postMassage)
+userRouter.post("/send-massage", postMassage);
 
 // Delete Route
 userRouter.delete("/unfollow-job-seeker", unfollowJobSeeker);
@@ -94,6 +104,8 @@ userRouter.delete(
   "/users/:userEmail/favorite-company/:companyEmail",
   deleteFavoriteCompany
 );
+userRouter.delete("/posts/:postId", deletePost);
+userRouter.delete("/remove-follower", removeFollower);
 
 // Put Route
 

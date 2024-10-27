@@ -104,12 +104,141 @@ export const checkFollowStatus = async (req, res) => {
       followed: followedEmail,
     });
 
-    // console.log("Existing Follow:", existingFollow);
-
     res.status(200).json({ hasFollowed: !!existingFollow });
   } catch (error) {
     // console.error("Error checking follow status:", error);
     res.status(500).json({ message: "Internal server error." });
+  }
+};
+
+export const getFollowers = async (req, res) => {
+  const { userEmail } = req.params;
+
+  const followerRecords = await followingsCollection
+    .find({ followed: userEmail })
+    .toArray();
+
+  // console.log(followerRecords);
+  const followerEmails = followerRecords.map((record) => record.follower);
+  // console.log(followerEmails);
+
+  const userInfos = await userCollection
+    .find({ email: { $in: followerEmails } })
+    .toArray();
+
+  res.status(200).json(userInfos);
+};
+
+export const getFollowing = async (req, res) => {
+  const { userEmail } = req.params;
+
+  const followingRecords = await followingsCollection
+    .find({ follower: userEmail })
+    .toArray();
+
+  const followedEmails = followingRecords.map((record) => record.followed);
+
+  const userInfos = await userCollection
+    .find({ email: { $in: followedEmails } })
+    .toArray();
+
+  res.status(200).json(userInfos);
+};
+
+export const deletePost = async (req, res) => {
+  const { postId } = req.params;
+
+  try {
+    const result = await postsCollection.deleteOne({
+      _id: new ObjectId(postId),
+    });
+
+    if (result.deletedCount === 1) {
+      res.status(200).json({ message: "Post deleted successfully" });
+    } else {
+      res.status(404).json({ message: "Post not found" });
+    }
+  } catch (error) {
+    console.error("Error deleting post:", error);
+    res.status(500).json({ message: "Failed to delete post" });
+  }
+};
+
+export const removeFollower = async (req, res) => {
+  const { followerEmail, followedEmail } = req.body;
+
+  const result = await followingsCollection.deleteOne({
+    follower: followerEmail,
+    followed: followedEmail,
+  });
+
+  if (result.deletedCount === 1) {
+    res.status(200).json({ message: "Follower removed successfully" });
+  } else {
+    res.status(404).json({ message: "Follower not found" });
+  }
+};
+
+export const getMutualConnections = async (req, res) => {
+  const { userEmail1, userEmail2 } = req.params;
+
+  try {
+    const user1Following = await followingsCollection
+      .find({ follower: userEmail1 })
+      .toArray();
+    const user2Following = await followingsCollection
+      .find({ follower: userEmail2 })
+      .toArray();
+
+    // Extract followed emails
+    const user1FollowingSet = new Set(user1Following.map((f) => f.followed));
+    const mutualConnections = user2Following.filter((f) =>
+      user1FollowingSet.has(f.followed)
+    );
+
+    res.status(200).json(mutualConnections);
+  } catch (error) {
+    // console.error("Error retrieving mutual connections:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+export const suggestJobSeekers = async (req, res) => {
+  const { userEmail } = req.params;
+
+  try {
+    // Find job seekers not followed by the user
+    const userFollowing = await followingsCollection
+      .find({ follower: userEmail })
+      .toArray();
+    const userFollowingSet = new Set(userFollowing.map((f) => f.followed));
+
+    const suggestedJobSeekers = await userCollection
+      .find({
+        role: "Job Seeker",
+        email: { $nin: Array.from(userFollowingSet) },
+      })
+      .limit(10)
+      .toArray();
+
+    res.status(200).json(suggestedJobSeekers);
+  } catch (error) {
+    // console.error("Error retrieving suggestions:", error);
+    res.status(500).json({ message: "Internal server error." });
+  }
+};
+export const getOwnPosts = async (req, res) => {
+  const { userEmail } = req.params;
+
+  try {
+    const posts = await postsCollection
+      .find({ userEmail: userEmail })
+      .sort({ createdAt: -1 })
+      .limit(50)
+      .toArray();
+
+    res.status(200).json(posts);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to fetch posts" });
   }
 };
 
@@ -544,7 +673,6 @@ export const postProfileSettings = async (req, res) => {
 export const postUserInfo = async (req, res) => {
   try {
     const { about, phone, photoUrl, email, socialLinks } = req.body;
-    console.log(req.body);
 
     if (!email) {
       return res.status(400).json({ message: "Email is required" });
@@ -613,8 +741,6 @@ export const createOrUpdateResume = async (req, res) => {
 
     if (existingResume) {
       const { _id, ...updateData } = resumeData;
-      // console.log(resumeData);
-
       const updatedResume = await resumesCollection.findOneAndUpdate(
         { email },
         { $set: updateData },
@@ -671,8 +797,6 @@ export const getCareerSuggestions = async (req, res) => {
 
 export const getJobCountsByEmail = async (req, res) => {
   const { email } = req.params;
-  // console.log(email);
-
   try {
     const appliedJobsCount = await applicationsCollection.countDocuments({
       user_email: email,
@@ -819,19 +943,22 @@ export const getLatestJobsForUser = async (req, res) => {
 
 export const postMassage = async (req, res) => {
   const { senderId, receiverId } = req.query;
-  const message = req.body;
+  const { massage, smsSender } = req.body;
   const user = await userCollection.findOne({ email: senderId });
-  const company = await userCollection.findOne({ email: receiverId });
-  console.log(company);
+
+  const company = await companiesCollection.findOne({ email: receiverId });
   const conversation = await messagesCollection.findOne({
-    sender: senderId,
-    receiver: receiverId,
+    $or: [
+      { sender: senderId, receiver: receiverId },
+      { sender: receiverId, receiver: senderId }
+    ]
+
   });
   if (!senderId || !receiverId) {
     return res.status(404).json({ error: "Sender or receiver not found" });
   }
   if (conversation) {
-    conversation.messages.push({ sent: message, timestamp: new Date() });
+    conversation.messages.push({ massage, timestamp: new Date(), sender: smsSender });
     const update = await messagesCollection.updateOne(
       { _id: conversation._id },
       { $set: { messages: conversation.messages } }
@@ -840,21 +967,31 @@ export const postMassage = async (req, res) => {
   } else {
     const newConversation = {
       sender: senderId,
-      senderName: user.name,
+      senderName: user?.name,
       receiver: receiverId,
-      receiverName: company.name,
+      receiverName: company?.company_name,
+
       senderImg: user?.photoURL,
-      receiverImg: company?.photoURL,
+      receiverImg: company?.company_logo,
       messages: [
         {
-          sent: message,
+          massage,
           timestamp: new Date(),
+          sender: smsSender
         },
       ],
       createdAt: new Date(),
     };
     const result = await messagesCollection.insertOne(newConversation);
-    res.send(result);
+    req.io.emit("newMessage", {
+      senderId,
+      receiverId,
+      massage,
+      smsSender,
+      timestamp: new Date(),
+    });
+    res.send(result)
+
   }
 };
 
