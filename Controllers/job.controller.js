@@ -15,6 +15,7 @@ export const homePageInfo = async (req, res) => {
   try {
     // Count the total number of jobs and companies
     const jobCount = await jobsCollection.countDocuments();
+    const jobs = await jobsCollection.find().toArray();
     const companyCount = await companiesCollection.countDocuments();
     const categoryCounts = await jobCategory.find().toArray();
     const successPeoples = (
@@ -32,6 +33,7 @@ export const homePageInfo = async (req, res) => {
       successPeoples,
       candidates,
       reviews,
+      jobs
     };
 
     res.send(response);
