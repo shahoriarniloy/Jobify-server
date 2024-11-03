@@ -12,6 +12,7 @@ import {
   careersCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
+import { io } from './../index.js';
 import Stripe from 'stripe';
 
 export const createEmployeeAccount = async (req, res) => {
@@ -984,7 +985,7 @@ export const postMassage = async (req, res) => {
       createdAt: new Date(),
     };
     const result = await messagesCollection.insertOne(newConversation);
-    req.io.emit("newMessage", {
+    io.emit("sendMessage", {
       senderId,
       receiverId,
       massage,
