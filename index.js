@@ -1,6 +1,6 @@
 import express, { json } from "express";
+import http from 'http';
 import cors from "cors";
-import { createServer } from "http";
 import { Server } from "socket.io";
 import UserRouter from "./Routes/user.route.js";
 import companyRoute from "./Routes/company.route.js";
@@ -12,8 +12,8 @@ import nodemailer from "nodemailer";
 const app = express();
 const port = process.env.PORT || 5000;
 
-const server = createServer(app);
-const corsAccess = {
+const server = http.createServer(app);
+const corsOptions = {
   origin: [
     "http://localhost:5173",
     "http://localhost:5174",
@@ -24,43 +24,46 @@ const corsAccess = {
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,
-}
+};
 
-const io = new Server(server, {
-  cors: corsAccess
+export const io = new Server(server, {
+  cors: corsOptions
 });
 
-
-
-app.use(
-  cors(corsAccess)
-);
+// Middleware
+app.use(cors(corsOptions));
+app.use(json());
 app.use((req, res, next) => {
-  req.io = io;
+  req.io = io; // Attach the socket.io instance to the request object
   next();
 });
-app.use(json());
+
+// Routes
 app.use(UserRouter);
 app.use(companyRoute);
 app.use(jobRouter);
 app.use(adminRouter);
 app.use(otherRouter);
 
+// Online users management
 let onlineUsers = [];
 
 const addNewUser = (email, socketId) => {
-  !onlineUsers.some((user) => user.email === email) &&
+  const userExists = onlineUsers.some(user => user.email === email);
+  if (!userExists) {
     onlineUsers.push({ email, socketId });
+  }
 };
 
 const removeUser = (socketId) => {
-  onlineUsers = onlineUsers.filter((user) => user.socketId !== socketId);
+  onlineUsers = onlineUsers.filter(user => user.socketId !== socketId);
 };
 
 const getUser = (email) => {
-  return onlineUsers.find((user) => user.email === email);
+  return onlineUsers.find(user => user.email === email);
 };
 
+// Socket.io setup
 io.on("connection", (socket) => {
   socket.on("newUser", (email) => {
     addNewUser(email, socket.id);
@@ -68,10 +71,23 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     removeUser(socket.id);
+  });
 
+  socket.on("sendMessage", ({ senderId, receiverId, message }) => {
+    console.log('massa')
+    const receiver = getUser(receiverId);
+    if (receiver) {
+      socket.emit("receiveMessage", {
+        senderId,
+        message,
+        timestamp: new Date()
+      });
+    }
   });
 });
+// .to(receiver.socketId)
 
+// Nodemailer setup
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -82,10 +98,12 @@ const transporter = nodemailer.createTransport({
 
 export default transporter;
 
+// check route
 app.get("/", (req, res) => {
   res.send("Jobify server is running");
 });
 
+// Start the server
 server.listen(port, () => {
-  // console.log(`Server is running on port: ${port}`);
+  console.log(`Server is running on port: ${port}`);
 });
