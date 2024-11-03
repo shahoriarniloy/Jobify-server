@@ -12,6 +12,7 @@ import {
   careersCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
+import Stripe from 'stripe';
 
 export const createEmployeeAccount = async (req, res) => {
   const user = req.body;
@@ -997,3 +998,51 @@ export const getAllMessage = async (req, res) => {
     .toArray();
   res.send(result);
 };
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
+
+
+export const paymentIntent = async (req, res) => {
+  try {
+      const { amount, email, name } = req.body;
+      console.log(email);
+      const parsedAmount = parseInt(amount);
+
+      if (isNaN(parsedAmount) || parsedAmount <= 0) {
+          return res.status(400).json({ error: 'Invalid amount' });
+      }
+
+      // Create a payment intent with Stripe
+      const paymentIntent = await stripe.paymentIntents.create({
+          amount: parsedAmount,
+          currency: 'usd',
+          metadata: {
+              email,
+              name,
+          },
+      });
+
+      // Upgrade the user's account only after successful payment intent creation
+      const result = await userCollection.updateOne(
+          { email },
+          { $set: { accountType: 'premium' } }
+      );
+
+      // Check if the account was successfully upgraded
+      if (result.modifiedCount > 0) {
+          console.log(`Account upgraded for ${email}`);
+      } else {
+          console.warn(`No account found for ${email} or upgrade not needed.`);
+      }
+
+      // Respond with the client secret for the payment intent
+      res.json({ clientSecret: paymentIntent.client_secret });
+  } catch (error) {
+      console.error("Error creating payment intent:", error);
+      res.status(500).json({ error: 'Failed to create Payment Intent' });
+  }
+};
+
+
+
