@@ -46,6 +46,7 @@ import {
   getOwnPosts,
   deletePost,
   removeFollower,
+  paymentIntent,
 } from "../Controllers/user.controller.js";
 import { jobCategories } from "../Controllers/job.controller.js";
 const userRouter = express.Router();
@@ -112,5 +113,6 @@ userRouter.delete("/remove-follower", removeFollower);
 userRouter.put("/posts/:postId/like", postLike);
 userRouter.put("/posts/:postId/unlike", postUnlike);
 userRouter.post("/posts/:postId/comment", postComment);
+userRouter.post('/create-intent',paymentIntent);
 
 export default userRouter;
