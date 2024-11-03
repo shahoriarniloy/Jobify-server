@@ -9,11 +9,8 @@ import {
   userCollection,
 } from "../Models/database.model.js";
 
-// for home page
-
 export const homePageInfo = async (req, res) => {
   try {
-    // Count the total number of jobs and companies
     const jobCount = await jobsCollection.countDocuments();
     const jobs = await jobsCollection.find().toArray();
     const companyCount = await companiesCollection.countDocuments();
@@ -65,10 +62,7 @@ export const postJob = async (req, res) => {
 
   const categoryName = job.jobCategory;
 
-  await jobCategory.updateOne(
-    { name: categoryName },
-    { $inc: { count: 1 } }
-  );
+  await jobCategory.updateOne({ name: categoryName }, { $inc: { count: 1 } });
 
   res.status(201).json({ message: "Job posted successfully!", job });
 };
@@ -76,7 +70,7 @@ export const postJob = async (req, res) => {
 export const advanceSearch = async (req, res) => {
   const page = parseInt(req.query.page) || 0;
   const size = parseInt(req.query.size) || 10;
-  const currentDateString = new Date().toISOString().split("T")[0]; // Current date in YYYY-MM-DD format
+  const currentDateString = new Date().toISOString().split("T")[0];
 
   const {
     searchTerm,
@@ -157,23 +151,54 @@ export const advanceSearch = async (req, res) => {
   }
 };
 
+// export const searchLocation = async (req, res) => {
+//   const { searchTerm, location } = req.query;
+//   const currentDateString = new Date().toISOString().split("T")[0];
+
+//   const query = {
+//     deadline: { $gte: currentDateString },
+//   };
+
+//   if (searchTerm) {
+//     query.$or = [
+//       { title: { $regex: searchTerm, $options: "i" } },
+//       { company: { $regex: searchTerm, $options: "i" } },
+//     ];
+//   }
+
+//   if (location) {
+//     query.location = { $regex: location, $options: "i" };
+//   }
+
+//   try {
+//     if (!searchTerm && !location) {
+//       return res.json([]);
+//     }
+
+//     const result = await jobsCollection.find(query).toArray();
+//     res.send(result);
+//   } catch (error) {
+//     res.status(500).send("Server Error");
+//   }
+// };
+
 export const searchLocation = async (req, res) => {
   const { searchTerm, location } = req.query;
   const currentDateString = new Date().toISOString().split("T")[0];
 
   const query = {
-    deadline: { $gte: currentDateString },
+    "jobInfo.deadline": { $gte: currentDateString },
   };
 
   if (searchTerm) {
     query.$or = [
-      { title: { $regex: searchTerm, $options: "i" } },
-      { company: { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.title": { $regex: searchTerm, $options: "i" } },
+      { "jobInfo.company": { $regex: searchTerm, $options: "i" } },
     ];
   }
 
   if (location) {
-    query.location = { $regex: location, $options: "i" };
+    query["jobInfo.location"] = { $regex: location, $options: "i" };
   }
 
   try {
@@ -369,9 +394,9 @@ export const companiesJobs = async (req, res) => {
 export const companiesJobApplication = async (req, res) => {
   const { email } = req.params;
   const jobs = await jobsCollection
-    .find({ "companyInfo.email":email })
+    .find({ "companyInfo.email": email })
     .toArray();
-  
+
   const jobIds = jobs.map((job) => job._id.toString());
   const applications = await applicationsCollection
     .find({ job_id: { $in: jobIds } })
@@ -409,11 +434,11 @@ export const singleJob = async (req, res) => {
 
 export const RelatedJobs = async (req, res) => {
   const jobTitle = req.query.title;
-  const query = jobTitle ? { "jobInfo.title": { $regex: jobTitle, $options: "i" } } : {};
+  const query = jobTitle
+    ? { "jobInfo.title": { $regex: jobTitle, $options: "i" } }
+    : {};
 
-  const jobs = await jobsCollection
-    .find(query)
-    .toArray();
+  const jobs = await jobsCollection.find(query).toArray();
 
   res.send(jobs);
 };
