@@ -12,8 +12,10 @@ import {
   careersCollection,
 } from "./../Models/database.model.js";
 import { ObjectId } from "mongodb";
+
 import { io } from './../index.js';
 import Stripe from 'stripe';
+
 
 export const createEmployeeAccount = async (req, res) => {
   const user = req.body;
