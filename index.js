@@ -20,7 +20,8 @@ const corsOptions = {
     "https://jobify-13db1.web.app",
     "https://jobify-13db1.firebaseapp.com",
     "https://jobify07.netlify.app",
-    "https://jobi-fy.web.app/"
+    "https://jobify-job-portal.netlify.app",
+    "https://jobi-fy.web.app"
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   credentials: true,

@@ -82,9 +82,8 @@ export const advanceSearch = async (req, res) => {
     salaryRange,
   } = req.query;
 
-  // Main query object
   const query = {
-    "jobInfo.deadline": { $gte: currentDateString }, // Ensure deadline is inside jobInfo and greater than or equal to the current date
+    "jobInfo.deadline": { $gte: currentDateString }, 
   };
 
   // Search by title or company inside jobInfo
